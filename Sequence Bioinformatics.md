@@ -1,8 +1,59 @@
-# Sequence Bioinformatics
+
+
+# Sequence Bioinformatics4
 
 ## 목차
 
-* [Sequencing](#sequencing)
+- [Sequence Bioinformatics4](#sequence-bioinformatics4)
+  - [목차](#목차)
+  - [Lecture 1: Intro](#lecture-1-intro)
+    - [Early sequence bioinformaticists](#early-sequence-bioinformaticists)
+      - [Assembling the target sequence](#assembling-the-target-sequence)
+      - [Margaret Dayhoff](#margaret-dayhoff)
+      - [Walter Goad](#walter-goad)
+    - [Early RNA Sequencing](#early-rna-sequencing)
+    - [Early DNA Sequencing](#early-dna-sequencing)
+    - [Sequencing bioinformatics](#sequencing-bioinformatics)
+  - [Lecture 2: Big Data](#lecture-2-big-data)
+    - [Algorithm](#algorithm)
+    - [Brute force (exhaustive) algorithms](#brute-force-exhaustive-algorithms)
+    - [Heuristic algorithms](#heuristic-algorithms)
+      - [seed-filter-extend](#seed-filter-extend)
+      - [k-mer (길이 k의 부분 문자열)](#k-mer-길이-k의-부분-문자열)
+    - [Process, access, store big data](#process-access-store-big-data)
+      - [Parallel computing](#parallel-computing)
+      - [Multi-core computers](#multi-core-computers)
+      - [Cluster](#cluster)
+      - [Heterogeneous Computing](#heterogeneous-computing)
+      - [Cloud computing](#cloud-computing)
+      - [SLURM(Simple Linux Utility for Resource Management)](#slurmsimple-linux-utility-for-resource-management)
+    - [Graph](#graph)
+      - [트리(Tree)](#트리tree)
+      - [Suffix Tree](#suffix-tree)
+      - [Suffix Array](#suffix-array)
+  - [Lecture 3: Genomes, Evolutionary Forces](#lecture-3-genomes-evolutionary-forces)
+    - [Prokaryotes vs Eukaryotes](#prokaryotes-vs-eukaryotes)
+      - [Organisms vs. their genomes](#organisms-vs-their-genomes)
+      - [Prokaryotic genomes](#prokaryotic-genomes)
+      - [Eukaryotic nuclear genomes](#eukaryotic-nuclear-genomes)
+      - [Eukaryotic organellar genomes](#eukaryotic-organellar-genomes)
+    - [Evolutionarly Forces](#evolutionarly-forces)
+      - [Meiotic recombination](#meiotic-recombination)
+      - [Selection](#selection)
+      - [(Random) genetic drift](#random-genetic-drift)
+      - [Gene flow](#gene-flow)
+      - [Pan-genome](#pan-genome)
+      - [Evolutionary Forces](#evolutionary-forces)
+      - [Taxonomic relationships](#taxonomic-relationships)
+    - [Mutations](#mutations)
+      - [Single nucleotide mutations](#single-nucleotide-mutations)
+      - [Larger scale Mutation](#larger-scale-mutation)
+      - [Segmental duplications in humans](#segmental-duplications-in-humans)
+      - [Wohle Genome Duplication in plants](#wohle-genome-duplication-in-plants)
+      - [Fate of duplicated genes](#fate-of-duplicated-genes)
+      - [Gene \& genome duplications](#gene--genome-duplications)
+      - [Transposable / Mobile elements](#transposable--mobile-elements)
+      - [Orphan genes](#orphan-genes)
 
 
 ## Lecture 1: Intro 
@@ -874,4 +925,3 @@ Orphan genes는 다른 종이나 계통에서 (감지 가능한) homologs 유전
 
 - **homology-detection failure**: 다른 종이나 계통에 homologs 유전자가 존재할 수 있지만, 현재의 비교 방법으로는 감지되지 않을 수 있습니다. 이는 homology 검출 기술의 한계로 인해 발생할 수 있습니다. 따라서 일부 유전자는 다른 종이나 계통에서 유사한 역할을 수행하더라도 현재의 비교 방법으로는 감지되지 않을 수 있습니다.
 
-### reReview questions/topics
