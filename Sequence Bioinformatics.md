@@ -2,10 +2,7 @@
 
 # Sequence Bioinformatics4
 
-## 목차
-
 - [Sequence Bioinformatics4](#sequence-bioinformatics4)
-  - [목차](#목차)
   - [Lecture 1: Intro](#lecture-1-intro)
     - [Early sequence bioinformaticists](#early-sequence-bioinformaticists)
       - [Assembling the target sequence](#assembling-the-target-sequence)
