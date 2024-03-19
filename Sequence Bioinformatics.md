@@ -1,8 +1,9 @@
-
-
 # Sequence Bioinformatics4
 
+## 목차
+
 - [Sequence Bioinformatics4](#sequence-bioinformatics4)
+  - [목차](#목차)
   - [Lecture 1: Intro](#lecture-1-intro)
     - [Early sequence bioinformaticists](#early-sequence-bioinformaticists)
       - [Assembling the target sequence](#assembling-the-target-sequence)
@@ -51,6 +52,25 @@
       - [Gene \& genome duplications](#gene--genome-duplications)
       - [Transposable / Mobile elements](#transposable--mobile-elements)
       - [Orphan genes](#orphan-genes)
+  - [Lecture 4: Genome Assembly](#lecture-4-genome-assembly)
+    - [Online database](#online-database)
+    - [Raw and pre-processed data](#raw-and-pre-processed-data)
+    - [Assembly: Principle](#assembly-principle)
+    - [Assembly: General Steps](#assembly-general-steps)
+      - [Greedy](#greedy)
+    - [Overlap-layout-consensus: OLC](#overlap-layout-consensus-olc)
+      - [Algorithm](#algorithm-1)
+    - [De Brujin Graph](#de-brujin-graph)
+      - [Best k-mer size](#best-k-mer-size)
+      - [Softwares](#softwares)
+    - [Scaffolding](#scaffolding)
+      - [with Mate pairs](#with-mate-pairs)
+      - [with long reads](#with-long-reads)
+      - [with long range linkage information](#with-long-range-linkage-information)
+    - [Finishing genome assembly](#finishing-genome-assembly)
+    - [Evaluation](#evaluation)
+    - [Genome sequence](#genome-sequence)
+    - [SLURM](#slurm)
 
 
 ## Lecture 1: Intro 
@@ -68,22 +88,22 @@
   
 2. **서열 분석 ➟ 수학적 문제**:
 
-* **pattern matching and detecting**: 서열 분석은 수학적 문제로 볼 수 있습니다. 서열을 조립하고 보존된 서열 패턴을 분석하며, 동일성을 갖는 유전자를 식별하는 등의 작업이 수행됩니다. 
+* **pattern matching and detecting**: 서열 분석은 수학적 문제로 볼 수 있습니다. 서열을 Assembly하고 보존된 서열 패턴을 분석하며, 동일성을 갖는 유전자를 식별하는 등의 작업이 수행됩니다. 
 * **statistical problems**: 서열 분석에서는 통계학적 기법이 사용됩니다. 예를 들어, 코돈 바이어스(특정 코돈이 다른 코돈보다 더 자주 사용되는 경향)를 분석하는 데 통계적 기법이 적용됩니다.
 * "**paleogenetics**"(고생물학): 서열을 사용하여 서열 및 생물체의 진화적 역사를 문서화합니다. 과거의 생물학적 이벤트를 이해하고 서열 데이터를 통해 이를 추적하는 것이 목적입니다.
 
 #### Assembling the target sequence
 
-단백질 서열 조각들을 가지고 목표 서열을 추론(조립)하는 접근 방법에 대해 알아봅시다. 주어진 데이터는 단백질 서열의 조각들이며, 접근 방법은 가능한 모든 조합을 시험하여 P와 Q 조각 간의 겹침을 확인하는 것입니다.
+단백질 서열 조각들을 가지고 목표 서열을 추론(Assembly)하는 접근 방법에 대해 알아봅시다. 주어진 데이터는 단백질 서열의 조각들이며, 접근 방법은 가능한 모든 조합을 시험하여 P와 Q 조각 간의 Overlap을 확인하는 것입니다.
 
 이 과정은 다음과 같이 진행될 수 있습니다:
 
 1. 주어진 단백질 서열 조각들을 P와 Q의 두 그룹으로 나눕니다.
 2. 모든 가능한 P와 Q 조각의 조합을 만듭니다.
-3. 각 조합에서 P와 Q 조각 간의 겹침을 확인합니다.
-4. 겹침이 발견되는 조합은 후보 서열로 유지됩니다.
-5. 후보 서열을 검증하여 모든 조각이 순서에 맞게 조립되었는지 확인합니다.
-6. 올바르게 조립된 서열이 발견되면 목표 서열로 인정됩니다.
+3. 각 조합에서 P와 Q 조각 간의 Overlap을 확인합니다.
+4. Overlap이 발견되는 조합은 후보 서열로 유지됩니다.
+5. 후보 서열을 검증하여 모든 조각이 순서에 맞게 Assembly되었는지 확인합니다.
+6. 올바르게 Assembly된 서열이 발견되면 목표 서열로 인정됩니다.
 7. 이 접근 방법은 비효율적이고 계산 비용이 높을 수 있지만, 초기에는 이러한 방법을 사용하여 서열을 결정하는 데 일부 화학적 분석 방법이 적용되었습니다.
 
 #### Margaret Dayhoff
@@ -114,7 +134,7 @@ Margaret Dayhoff가 개발한 다양한 생물정보학적 기법
   * RNA의 서열 결정은 화학적 분해 방법을 사용했습니다.
   * 효소적 분해: RNA 분자를 특정 효소를 사용하여 분해하였습니다.
   * 방사능으로 표시하고 조각들을 분리하였습니다. 이렇게 하면 서열 결정에 필요한 조각들을 얻을 수 있었습니다.
-  * overlapping fragments들을 결정하여 서열을 조립할 수 있었습니다.
+  * overlapping fragments들을 결정하여 서열을 Assembly할 수 있었습니다.
 * **sequence determination of short RNA molecules**
   * 초기에는 짧은 RNA 분자의 서열 결정이 주로 이루어졌습니다.
   * 예시로는 세균의 페닐알라닌 전달 RNA(Phe tRNA) 및 세균의 5S 리보솜 RNA(rRNA)가 있습니다.
@@ -137,7 +157,7 @@ DNA 서열 결정에 사용된 두 가지 접근 방법
   * 이 방법은 1977년에 Sanger에 의해 발표되었습니다.
   * 초기에는 약 120bp 정도의 작은 조각의 서열만을 결정하였습니다.
 
-최초의 DNA 서열 조립 소프트웨어는 Rodger Staden이 개발했으며, 다음과같은 주요 원리에 기반하여 작동합니다.
+최초의 DNA 서열 Assembly 소프트웨어는 Rodger Staden이 개발했으며, 다음과같은 주요 원리에 기반하여 작동합니다.
 
 * 오버랩(Overlap) 확인:
 
@@ -301,7 +321,7 @@ DNA 서열 결정에 사용된 두 가지 접근 방법
   - 최적화 문제에 사용됩니다.
   - 각 단계에서 알고리즘이 최선의 즉각적인 해결책을 선택합니다.
   - 전체적으로 최상의 해결책을 찾지 못할 수 있습니다.
-  - 서열 정렬 및 조립, 공통 조상 추론 등에 사용됩니다.
+  - 서열 정렬 및 Assembly, 공통 조상 추론 등에 사용됩니다.
 - 예: seed-and-extend 
   (seed-and-filter-and-extend)
 
@@ -332,7 +352,7 @@ DNA 서열 결정에 사용된 두 가지 접근 방법
 
 k-mer는 길이가 k인 부분 문자열을 의미합니다. 여기서 k는 일정한 길이를 가리킵니다. 이 부분 문자열은 주어진 DNA 또는 RNA 서열에서 추출됩니다. k-mer를 사용하면 서열 내의 패턴, 반복, 유전자 등을 파악할 수 있습니다.
 
-k-mer를 사용하는 일반적인 방법 중 하나는 sequence assembly입니다. 대규모 서열 데이터를 조립할 때, k-mer를 사용하여 서열을 작은 조각으로 나눈 다음 이를 이용하여 전체 서열을 조립하는 과정을 거칩니다.
+k-mer를 사용하는 일반적인 방법 중 하나는 sequence assembly입니다. 대규모 서열 데이터를 Assembly할 때, k-mer를 사용하여 서열을 작은 조각으로 나눈 다음 이를 이용하여 전체 서열을 Assembly하는 과정을 거칩니다.
 
 서열 데이터에서 k-mer를 추출할 때는 이동 윈도우 기법을 사용하여 서열을 순회하면서 모든 가능한 k-mer를 추출할 수 있습니다. 윈도우를 한 번씩 이동하면서 k-mer를 추출하므로 모든 서열 내의 k-mer를 효과적으로 추출할 수 있습니다.
 
@@ -735,7 +755,7 @@ Evolutionary Forces은 모든 생물체 및 게놈에 영향을 미치며 서로
 * Mbp 규모의 변이
 * 염색체 재배열
 
-**Evolutionary Forces은 종, 게놈 및 유전체 영역에 따라 강도가 다를 수 있습니다.** 시간이 흐를수록 유전적 변화가 발생할 기회가 더 많아지므로 종 간의 유전적 관계가 중요합니다. **주어진 시간이 더 길수록 더 많은 유전적 차이가 생길 기회가 많아지므로, 두 유전자가 갈라져 나온 시기가 중요합니다.** 종 간의 진화적 차이는 종의 유전적 다양성 및 게놈의 특성을 형성하는 데 중요한 역할을 합니다.
+**Evolutionary Forces은 종, 게놈 및 Genome 영역에 따라 강도가 다를 수 있습니다.** 시간이 흐를수록 유전적 변화가 발생할 기회가 더 많아지므로 종 간의 유전적 관계가 중요합니다. **주어진 시간이 더 길수록 더 많은 유전적 차이가 생길 기회가 많아지므로, 두 유전자가 갈라져 나온 시기가 중요합니다.** 종 간의 진화적 차이는 종의 유전적 다양성 및 게놈의 특성을 형성하는 데 중요한 역할을 합니다.
 
 생물의 진화는 여러 가지 인자에 의해 형성되며, 이러한 Evolutionary Forces은 모든 생물체와 게놈에 영향을 줍니다. 이러한 Evolutionary Forces은 서로 다른 종 내에서 및 종 간에서 다양한 수준의 유전적 변이를 초래합니다. 유전적 다양성은 종 내부와 종 간의 다양한 수준에서 나타날 수 있으며, 이러한 다양성은 여러 가지 Evolutionary Forces에 의해 조절됩니다. 
 
@@ -921,4 +941,449 @@ Orphan genes는 다른 종이나 계통에서 (감지 가능한) homologs 유전
 - **true absence / lineage specificity**: 일부 Orphan 유전자는 새롭게 발생하거나 진화적으로 변형된 것일 수 있습니다. 이는 특정 종이나 계통에만 존재하는 생물학적인 혁신을 나타냅니다.
 
 - **homology-detection failure**: 다른 종이나 계통에 homologs 유전자가 존재할 수 있지만, 현재의 비교 방법으로는 감지되지 않을 수 있습니다. 이는 homology 검출 기술의 한계로 인해 발생할 수 있습니다. 따라서 일부 유전자는 다른 종이나 계통에서 유사한 역할을 수행하더라도 현재의 비교 방법으로는 감지되지 않을 수 있습니다.
+
+## Lecture 4: Genome Assembly
+
+**Genome Assembly**
+
+Genome Assembly은 생물의 전체 유전 정보를 구성하는 DNA 서열을 결합하여 일련의 연속적인 서열로 구성하는 프로세스입니다. 이는 대규모 프로젝트에서 발생한 DNA 시퀀싱 데이터를 분석하여 생물학적 정보를 추출하는 중요한 단계 중 하나입니다. 다음은 Genome Assembly 과정에 대한 간략한 설명입니다.
+
+1. **Sequencing**:
+   - Genome Assembly 프로세스는 먼저 대상 종의 DNA를 시퀀싱하여 수천 또는 수백만 개의 짧은 DNA 조각을 생성합니다. 이 시퀀싱은 다양한 기술을 사용하여 수행될 수 있으며, 최근에는 높은 품질의 긴 독서를 생성할 수 있는 장기 시퀀싱 기술이 발전되었습니다.
+
+2. **Assembly**:
+   - 시퀀싱 데이터를 기반으로 컴퓨터 알고리즘을 사용하여 이러한 짧은 DNA 조각을 조합하여 원래 Genome의 전체 서열을 재구성합니다. 이 과정은 종에 따라 복잡도가 다를 수 있으며, 시퀀싱 데이터의 품질과 양, 그리고 종의 크기와 복잡도에 영향을 받습니다.
+
+3. **Scaffolding**:
+   - 종종 Assembly된 DNA 조각은 큰 덩어리로 결합될 수 있으며, 이는 개별 염색체 수준의 Genome 정보를 추출하는 데 어려움을 초래할 수 있습니다. Genome 분할은 이러한 덩어리를 분리하고, Assembly된 조각을 개별 염색체로 그룹화하는 과정입니다.
+
+4. **Validation**:
+   - Genome Assembly의 마지막 단계는 Assembly된 Genome의 품질을 검증하는 것입니다. 이는 Genome Assembly의 정확성과 완전성을 평가하고, 잘못된 구조나 인위적인 수정을 식별하는 데 도움이 됩니다.
+
+
+### Online database
+
+온라인 데이터베이스는 웹 기반으로 접근 가능한 데이터 저장소입니다. 여러 종류의 정보를 저장하고 관리하며, 연구자들이 그 정보를 검색하고 활용할 수 있습니다. 여기에는 UniProt, GenBank, 그리고 genome resource와 같은 데이터베이스들이 포함됩니다.
+
+**UniProt**:
+- 목적: 기능적으로 주석이 달린 단백질 서열.
+- 하위 분류:
+  - 'sprot': 수동으로 주석이 달린 단백질 서열.
+  - 'trembl': 컴퓨터에 의해 주석이 달린 단백질 서열.
+
+**GenBank**:
+- 목적: 과학자들이 생성하고 제출한 서열 데이터.
+
+**Genome Resource**:
+- 목적: 하나의 Genome에 대한 모든 단백질 코딩 유전자의 완전한 집합 (nt, aa).
+- 다양성: 종에 특화된 데이터베이스 및 NCBI, ENSEMBL, UniProt, JGI 등에서 제공되는 데이터베이스.
+
+### Raw and pre-processed data
+
+**Raw data**는 실험 또는 조사를 통해 얻어진 초기 데이터를 의미합니다. 이 데이터는 보통 처리되지 않은 형태로 존재하며, 분석이나 해석 전에 전처리 과정을 거쳐야 합니다.
+
+**pre-processed data**는 Raw data를 분석에 적합한 형태로 가공하는 과정입니다. 여러 단계로 이루어질 수 있으며, 일반적으로 다음과 같은 작업들이 포함됩니다:
+
+1. **어댑터 제거(Adapter Removal)**:
+   - 다양한 Genome 시퀀싱 기술에서는 DNA 샘플이 시퀀싱 전에 어댑터(특정 서열)와 결합될 수 있습니다. 이 어댑터는 읽기 과정에서 불필요한 잡음을 생성할 수 있으므로, 어댑터를 제거하는 것이 중요합니다.
+
+2. **품질 필터링/트리밍(Quality Filtering/Trimming)**:
+   - 시퀀싱 과정에서는 어떤 부위의 데이터가 부정확하거나 낮은 품질을 가질 수 있습니다. 이런 경우에는 데이터의 품질을 높이기 위해 필터링 또는 트리밍 작업을 수행합니다. 이는 품질이 낮은 부분을 제거하거나 수정함으로써 데이터의 정확성을 향상시킵니다.
+
+3. **기타 작업(기타)**:
+   - **오류 수정(Error Correction)**: 시퀀싱 과정에서 발생한 오류를 수정하여 데이터의 정확성을 개선하는 작업입니다.
+   - **오염 제거(Removal of Contamination)**: 외부로부터 유입된 다른 종의 DNA 또는 오염물질을 제거하는 과정입니다.
+
+**파일 형식**:
+이러한 전처리 작업은 다양한 파일 형식을 통해 수행될 수 있습니다. 일반적으로 DNA 시퀀싱 데이터는 FASTQ 또는 FASTA 형식으로 저장됩니다. 전처리된 데이터 역시 동일한 형식으로 저장될 수 있으며, 특정 전처리 도구나 소프트웨어에 따라 다를 수 있습니다.
+
++ **FASTA**
+
+  FASTA 형식은 DNA, RNA, 또는 단백질 서열을 포함하는 텍스트 파일 형식입니다.
+  FASTA 파일은 특정 분자의 서열을 나타내는 데에 사용됩니다.
+  각 서열은 헤더(Header)와 서열 데이터로 구성됩니다. 헤더에는 서열의 식별 정보가 포함되어 있습니다.
+
+  FASTA 파일은 두 형태가 반복되는 형식입니다.
+  첫 부분은 항상 ">"로 시작합니다.
+  ```
+  >Header1
+  AGCTGACTGACTGACTGACTGACTGACTGACTGAC
+  >Header2
+  TGACTGACTGACTGACTGACTGACTGACTGACTGA
+  ```
++ **FASTQ**
+
+  FASTQ 형식은 DNA 또는 RNA 시퀀싱 데이터를 저장하는 데 사용되는 텍스트 파일 형식입니다.
+  
+  각 라인은 다음과 같은 정보를 포함합니다: 시퀀싱 리드(서열), 품질 값, 리드 식별자 등.
+
+  + **sequence ID**: @ 로 시작하며, 해당 서열의 이름을 나타냅니다.
+  + **sequence**: 실제로 읽은 염기서열 정보입니다.
+  + **description**: ‘+’ 글자로 시작하는데, + 하나만 있기도 하고 sequence ID를 넣거나 설명을 넣는 부분입니다.
+  + **quality**: 각 염기서열이 얼마나 정확히 읽혔는지를 나타냅니다. Phred quality score 라는 표현법을 사용합니다.
+
+  fastq 파일은 NGS (Next generation sequencing data) 의 결과를 저장하는 데 주로 쓰입니다.
+  NGS 실험을 진행하면, 그 결과로 cDNA library 서열을 읽어서 데이터로 얻을 수 있습니다.
+
+  FASTQ 파일은 FASTA에 비해 품질 정보(Quality Scores)를 제공하여 각 서열의 품질을 평가할 수 있습니다. 이는 전처리 및 분석 과정에서 유용합니다.
+
+  ```
+  @Header1
+  AGCTGACTGACTGACTGACTGACTGACTGACTGAC
+  +Header1
+  !""""""""""""""""""""""""""""""""""""""""""""
+  @Header2
+  TGACTGACTGACTGACTGACTGACTGACTGACTGA
+  +Header2
+  !""""""""""""""""""""""""""""""""""""""""""""
+  ```
+  fastq 파일은 네 줄이 한 단위입니다.
+  서열 하나를 "read"라 표현합니다.
+
+  보통 이 파일을 직접 사용하기보다, reference genome 에 align 한 뒤에 활용됩니다.
+  fastq 파일은 대부분의 연구에서 raw data, 즉 가공되지 않은 원본 파일로 여겨집니다.
+
+여기서 사용되는 read는 몇가지 특징을 가집니다.
+
+1. **Length of Reads**:
+   - 시퀀싱 기술에 따라 다르지만, 일반적으로 생성된 리드(Reads)는 genome, chromosome 또는 gene 크기보다 훨씬 짧습니다.
+
+2. **Errors**:
+   - 서열 읽기 과정에서 발생하는 여러 가지 요인으로 인해 리드에는 일부 오류가 포함될 수 있습니다. 이러한 오류는 후속 분석에 영향을 미칠 수 있으며, 오류 수정 및 품질 제어 과정이 필요할 수 있습니다.
+
+3. **Not uniformly distributed**:
+   - 서열 데이터는 종종 특정 영역에 높은 커버리지(coverage)를 가지고 있거나, 그렇지 않은 경우가 있습니다. 이는 서열을 읽는 과정에서 발생하는 다양한 기술적 한계로 인해 발생할 수 있습니다.
+
+4. **Redundancy**:
+   - 일반적으로, 한 위치의 Genome는 여러 번 시퀀싱되어 다수의 리드가 생성됩니다. 이를 통해 커버리지를 계산할 수 있습니다.
+
+- **커버리지(Coverage)**:
+   - 각 서열 데이터의 위치가 얼마나 많은 리드로 커버되었는지를 나타내는 측정 항목입니다. 이는 시퀀싱 데이터의 품질을 평가하고, 후속 분석의 정확성을 보장하는 데 중요합니다.
+   - 최적의 커버리지는 연구 목적, 시료, 시퀀싱 기술 등에 따라 다를 수 있습니다. 예를 들어, Sanger 시퀀싱에서는 8배 커버리지가 충분할 수 있지만, Illumina 시퀀싱에서는 일반적으로 50-100배의 커버리지가 사용됩니다.
+   - 가령 어떤 DNA 조각을 sequencing할때, 보통 잘게 random subcloning을 해서 sequencing을 합니다. 그러면 한 DNA 조각의 여러 부분이 sequecing되는데 이때 어느 한 부분이 몇번 읽혔는지를 **depth**라고 합니다. 각 sequencing 길이를 다 합친 길이가 그 DNA 길이의 몇배인가를 **coverage**라고 부릅니다.
+
+### Assembly: Principle
+
+Genome Assembly은 DNA 서열 데이터를 사용하여 원래의 Genome 또는 염색체의 전체 서열을 재구성하는 프로세스입니다. 여기에는 다음과 같은 원리들이 포함됩니다:
+
+ - 서로 겹치는 리드 또는 서열 조각들은 동일한 Genome 위치에서 유래되었다는 가정하에 Assembly됩니다. 이를 통해 서로 겹치는 서열 조각들을 연결하여 전체 Genome의 서열을 재구성할 수 있습니다.
+
+ - 서로 겹치는 서열 영역이 동일한 Genome 위치에서 유래되었다고 가정하지만, 이 가정은 종종 현실에서 충족되지 않습니다.
+   - **동일한 서열, 다른 위치**: 동일한 서열이 다른 Genome 위치에서 유래된 경우가 있을 수 있습니다. 예를 들어, 반복적인 DNA 구간이 여러 번 복사되어 다수의 위치에서 발견될 수 있습니다.
+   - **다른 서열, 동일한 위치**: 서로 다른 서열이 동일한 Genome 위치에서 유래된 경우도 있을 수 있습니다. 이는 돌연변이, 염기 치환 등으로 인해 발생할 수 있습니다.
+
+이러한 비일치는 Assembly 과정에서 오류를 일으킬 수 있으며, 이를 극복하기 위해 다양한 알고리즘과 기술이 사용됩니다. 
+
+이외에도 여러 어려운 점이 존재합니다:
+
+Genome Assembly 과정에서는 다양한 도전 과제가 있습니다. 이러한 도전 과제들은 Assembly의 정확성과 완성도에 영향을 미칠 수 있습니다. 아래는 주요한 도전 과제들과 간단한 설명입니다:
+
+1. **Untrimmed Poor-Quality Reads**:
+   - 품질이 낮은 리드는 잘못된 Assembly 결과를 초래할 수 있습니다. 이를 해결하기 위해 리드를 품질 필터링하거나 트리밍해야 할 수 있습니다.
+
+2. **Errors**:
+   - 시퀀싱 과정에서 발생하는 다양한 종류의 오류가 있을 수 있습니다.
+     - **Base Calling Errors**: 시퀀싱 기기에서 발생하는 베이스 콜링 오류는 잘못된 염기가 서열에 삽입되거나 대체될 수 있습니다.
+     - **삭제(Deletion)**: 리드에서 염기가 누락될 수 있습니다.
+     - **삽입(Insertion)**: 리드에 잘못된 염기가 삽입될 수 있습니다.
+
+3. **Low Coverage, Bad Linkage**:
+   - 일부 영역은 리드로 충분히 커버되지 않거나, 서로 잘 연결되지 않을 수 있습니다. 이는 Assembly의 정확성과 완성도에 영향을 줄 수 있습니다.
+
+4. **Unknown Orientation**:
+   - 시퀀싱 데이터에서 리드의 방향이 명확하지 않은 경우가 있습니다. 이는 서로 다른 리드의 방향을 결정하기 어렵게 만들 수 있습니다.
+
+5. **Contamination**:
+   - 시퀀싱 샘플에는 다른 종의 DNA가 포함될 수 있으며, 이는 Assembly 과정에서 잘못된 결과를 초래할 수 있습니다.
+
+6. **High Heterozygosity**:
+   - 한 Genome 내에서의 다양한 다형성은 Assembly을 어렵게 만들 수 있습니다.
+
+7. **Polyploidy**:
+   - 몇몇 종은 다중 염색체를 가지고 있을 수 있으며, 이는 Assembly을 더 복잡하게 만듭니다.
+
+8. **Repeats**:
+   - Genome 내 반복적인 구조는 올바른 Assembly을 어렵게 만들 수 있습니다.
+
+이중 repeats는 Assembly에서 주요하게 다뤄지는 challenge입니다.
+
+Repeat은 Genome 내에서 동일한 또는 유사한 서열이 여러 번 Repeat되는 현상을 의미합니다. 이는 Genome Assembly 및 분석 과정에서 중요한 도전 과제 중 하나입니다. 주요한 종류의 Repeat은 다음과 같습니다:
+
+1. **Simple Repeats**:
+   - 단순 Repeat은 짧은 길이의 서열이 여러 번 Repeat되는 형태를 나타냅니다. 예를 들어, "ATATATATAT"와 같이 Repeat되는 서열이 있습니다.
+
+2. **Tandem or Dispersed Gene Families**:
+   - 직렬 또는 분산된 유전자 패밀리는 특정한 기능을 가진 여러 개의 유사한 유전자가 Genome 내에 직렬로 또는 분산되어 있는 형태를 의미합니다.
+
+3. **Segmental Duplications**:
+   - 세그멘탈 중복은 큰 단위의 DNA 서열이 Genome 내에서 중복되어 있는 현상을 나타냅니다. 이러한 중복은 일부 부분이 서로 유사하거나 동일한 경우가 있습니다.
+
+4. **Interspersed Repeats**:
+   - 삽입 반복은 다양한 유형의 전사 가능한 요소(Transposable Elements)로 구성됩니다. 이는 DNA 서열이 Genome 내에서 이동하거나 복사되는 현상을 나타냅니다.
+     - **DNA 트랜스포좀(DNA Transposons)**: 예를 들어, 옥수수의 Ac 요소와 같은 DNA 트랜스포좀이 있습니다. 80bp - 3kb
+     - **바이러스성 레트로트랜스포좀(Viral Retrotransposons)**: 예를 들어, 효모의 Ty 및 과일파리의 Copia 요소 등이 있습니다. 250bp - 10kb
+     - **비바이러스성 레트로트랜스포좀(Non-viral Retrotransposons)**: 예를 들어, SINEs(Short Interspersed Nuclear Elements) 및 LINEs(Long Interspersed Nuclear Elements) 등이 있습니다. 100-400bp // 6-8kb
+
+5. **Polyploids**:
+   - 다중체는 여러 개의 완전한 게놈 세트를 가진 유기체를 의미합니다. 이는 Assembly 및 분석을 더 복잡하게 만들 수 있습니다.
+
+### Assembly: General Steps
+
+Genome Assembly는 주어진 시퀀싱 데이터로부터 원래의 Genome 또는 염색체의 전체 서열을 재구성하는 프로세스입니다. 일반적으로 다음과 같은 단계로 진행됩니다:
+
+1. **Identify Read Overlaps, Assemble into Contigs**:
+   - 먼저 시퀀싱된 리드들 간의 overlapping을 식별하고, 이를 기반으로 Contig를 Assembly합니다. 겹치는 부분을 공유하는 리드들은 서로 연결되어 Assembly되어야 합니다. 따라서 Contig는 겹치는 영역을 나열해놓은 Assembly품, 즉 중첩 DNA 세그먼트 입니다.
+
+2. **Determine Order and Orientation of Contigs: Scaffolds**:
+   - 다음으로, Assembly된 Contig들 간의 상대적인 위치와 방향을 결정하여 Scaffold를 생성합니다. 이 과정에서 Contig들 간의 연결 정보 및 Genome 맵핑 데이터를 활용합니다. Scaffold는 Contig들 간의 공간적 관계를 나타내며, Genome Assembly의 완성도를 높이는 데 중요한 역할을 합니다.
+
+![](./contig.PNG)
+
+
+#### Greedy 
+
+Greedy approach는 Genome Assembly을 위한 한 가지 전략으로, 간단하고 직관적인 방식으로 리드 간의 Overlap을 통해 Assembly을 시도하는 방법입니다. 일반적으로 다음과 같은 단계로 진행됩니다:
+
+1. 먼저, 모든 서열 리드의 prefix와 suffix를 포함하는 룩업 테이블을 생성합니다.
+
+2. 시작 리드를 선택하고, 이를 기반으로 다른 리드를 확장합니다. 각 확장 단계에서는 가장 큰 Overlap을 기반으로 다음 리드를 선택합니다.
+
+3. 다음 리드를 선택할 때는 현재의 리드와 가장 큰 Overlap을 가진 리드를 선택합니다. 이를 통해 contig를 점진적으로 확장할 수 있습니다.
+
+4. 그러나 이러한 접근 방법은 종종 잘못된 Assembly을 초래할 수 있습니다. 예를 들어, 두 개 이상의 리드가 확장될 수 있지만 실제로 서로 겹치지 않는 경우가 있습니다. 이를 발견해야 합니다.
+
+5. 이러한 과정을 반복하여 최종적으로 하나 이상의 contig를 생성합니다. 그러나 이 방법은 종종 오류와 불완전한 Assembly을 초래할 수 있습니다.
+
+
+이런 Greedy approach는 아직도 short-shotgun data를 읽는데 사용되며, 주로 다음과 같은 특징을 가지는 데이터에 사용될 수 있습니다:
+
+- nuclear genome보다 작은 사이즈
+- single(circular) genome
+- 세포 당 수백개의 copy가 있는 경우
+- Greedy는 일반적으로 나름 괜찮은 결과를 줍니다. 
+
+그러나 Repeat과 같은 문제점이 여전히 존재합니다.
+
+**NOVOPlasty**는 이 작업에 사용될 수 있습니다.
+
+NOVOPlasty는 Genome Assembly을 위한 간단하고 효율적인 도구로, 단일 organellar genomes를 단편 시퀀싱 데이터로부터 Assembly하는 데 사용됩니다. 주로 organellar genomes를 Assembly하는 데 사용되며, 일반적으로 nuclear genome 보다 작고 단일한(circular) Genome로서 존재하는 organellar genomes에 적합합니다.
+
+NOVOPlasty는 다음과 같은 주요 특징을 가지고 있습니다:
+
++ 간단하고 사용자 친화적인 인터페이스: NOVOPlasty는 사용하기 쉽고 사용자 친화적인 인터페이스를 제공하여 비전문가도 쉽게 사용할 수 있습니다.
+
++ 단일 명령어로 작동: 사용자는 단일 명령어를 사용하여 NOVOPlasty를 실행할 수 있으며, 설치와 설정이 간단합니다.
+
++ 내장된 비선형 시퀀싱: NOVOPlasty는 시퀀싱 데이터에 포함된 내부 순환 구조를 검색하여 organellar genomes를 Assembly하는 데 사용됩니다.
+
++ Genome Assembly 및 완성: NOVOPlasty는 단편 시퀀싱 데이터로부터 organellar genomes를 Assembly하고 완성된 Genome 서열을 생성합니다.
+
++ Genome Assembly 결과 시각화: Assembly된 Genome의 결과는 사용자에게 제공되며, Genome Assembly 결과를 시각화할 수 있는 다양한 도구를 제공합니다.
+
+NOVOPlasty는 organellar genomes의 빠르고 효율적인 Assembly을 위한 간단한 도구로 널리 사용되며, 비교적 작은 데이터셋에 적합합니다. 그러나 대량의 시퀀싱 데이터 및 복잡한 구조를 가진 Genome의 경우에는 다른 전문 도구를 고려해야 할 수 있습니다.
+
+
+### Overlap-layout-consensus: OLC
+
+#### Algorithm
+
+OLC(Overlap-Layout-Consensus) 알고리즘은 단편 시퀀싱 데이터에서 Genome를 Assembly하기 위한 일련의 알고리즘입니다. 이 중에서 overlap graph는 OLC 알고리즘의 첫 번째 단계로, 시퀀싱된 리드들 간의 Overlap 관계를 그래프로 나타냅니다.
+
++ Node는 시퀀스 리드를 나타냅니다.
++ Edge의 가중치는 Preffix와 suffix의 Overlap을 나타냅니다.
++ 목표는 그래프를 통해 Genome 또는 Contig를 찾는 것입니다.
++ 이를 위해 다음과 같은 접근 방식을 사용합니다:
+  + 그래프 탐색(Traversing the Graph): Overlap 그래프를 탐색하여 Genome 또는 Contig를 찾습니다.
+
+![](./overlap.PNG)
+
+
+**Overlap:**
+- Overlap 그래프를 계산합니다. 이 그래프는 각 노드가 시퀀스 리드를 나타내고, 에지의 가중치는 각 리드 간의 Overlap을 나타냅니다.
+- Overlap을 찾기 위해 suffix trees 및/또는 dynamic programming을 사용할 수 있습니다. 이 과정은 보통 크고 복잡한 데이터셋에서 수행됩니다.
+
+**Layout:**
+- 그래프에서 가능한 경우에 중복을 제거합니다. 이는 그래프를 간결하게 만들고, Assembly 과정에서의 불필요한 복잡성을 줄입니다.
+- Overlap 그래프의 일부를 사용하여 contigs를 계산합니다.
+
+**Consensus:**
+- 각 Contig 위치에 대해 하나의 염기(nucleotide)를 선택하여 Genome를 Assembly합니다.
+- 이 단계에서는 Overlap 그래프로부터 계산된 Contig를 기반으로 최종 Genome를 구성합니다.
+
+그러나, 문제가 있습니다. 많은 overlap으로 인해, 여러 경로가 생길 수 있고, 이는 결국 여러 genome이 가능하단 뜻 입니다. 
+
+따라서 contig는 명확하게 식별할 수 있는 가장 긴 연속적인 세그먼트의 집합을 출력합니다. 그러나, 이렇게 OLC로 만들어진 contigs의 수가 수천개 이상일 수 있습니다.
+
+NGS의 등장으로, OLC는 초기 Sanger 시퀀싱 데이터에 대해 개발되었지만, 현재 NGS데이터에는 사용할 수 없습니다. NGS 단편 시퀀싱 데이터에 대해서는 너무 많은 계산량과 고유한 겹침의 부족으로 인해 계산적으로 실현 가능하지 않습니다. 이러한 한계는 NGS 시퀀싱 데이터의 특성과 관련이 있으며, 이러한 데이터는 Sanger 데이터와는 달리 더 짧은 리드와 더 높은 오류율을 가지고 있습니다. 
+
+### De Brujin Graph
+
+드브루인 그래프(De Bruijn graph)는 생물정보학에서 시퀀싱 데이터를 Assembly하는 데 널리 사용되는 그래프입니다. 이 그래프는 DNA 또는 RNA 서열 데이터에서 시퀀싱된 단편 리드를 효과적으로 Assembly하기 위해 개발되었습니다.
+
+드브루인 그래프의 기본 아이디어는 시퀀싱된 단편 리드의 겹침을 기반으로 그래프를 구성하는 것입니다. 이 그래프는 각 노드가 길이 k인 서열 조각을 나타내며, 이 서열 조각은 k-1 길이의 겹침을 가지고 있습니다. 이러한 그래프는 시퀀싱 데이터의 겹침 정보를 효율적으로 저장하고 분석할 수 있도록 해줍니다.
+
+![](./debrujin.PNG)
+
+드브루인 그래프는 다음과 같은 특징을 가지고 있습니다:
+
+- k-mer 노드: 그래프의 각 노드는 길이 k인 k-mer 서열을 나타냅니다. 이 k-mer는 시퀀싱 데이터의 단편 리드에서 추출됩니다.
+- Edge: 두 개의 k-mer 노드가 겹칠 때마다 에지가 형성됩니다. 에지의 가중치는 두 k-mer 사이의 겹침 정보를 나타냅니다.
+- Assembly: 드브루인 그래프를 통해 서열을 Assembly할 수 있습니다. 이는 그래프의 에지를 따라 이동하여 연결된 k-mer를 조합함으로써 이루어집니다.
+
+드브루인 그래프는 특히 NGS(short-read) 데이터의 Assembly에 널리 사용됩니다.
+
+#### Best k-mer size
+
+가장 적합한 k-mer size를 선택하기 위해선 여러가지를 고려해야 합니다:
+
+- k-mer의 출현 빈도를 분석:
+
+  먼저 시퀀싱 데이터를 k-mer로 분할하고, 각 k-mer의 출현 빈도를 조사합니다.
+다양한 k 값에 대해 k-mer들의 빈도를 플롯하고, 신호(signal)와 잡음(noise)을 분리하는 최적의 k 값을 선택합니다.
+
+- 노드의 수를 줄이기 위한 k 선택:
+
+  k 값을 충분히 크게 선택하여 노드의 수를 줄입니다. 큰 k 값은 노이즈를 줄이고 시그널을 강화하는 데 도움이 됩니다.
+
+- subgraph(gap)의 수를 줄이기 위한 k 선택:
+
+  k 값을 충분히 작게 선택하여 subgraph의 수를 줄입니다. 작은 k 값은 subgraph의 수를 줄이고 시퀀싱 데이터를 더 잘 연결하는 데 도움이 됩니다.
+
+
+#### Softwares
+
+드 브루인 방법을 사용하는 소프트웨어들은 Genome Assembly에 널리 사용되며, 다양한 구현과 매개변수 설정을 가지고 있습니다. 이러한 소프트웨어들은 다음과 같은 특징을 가지고 있습니다:
+
+- **Auxiliary data structures**: 시퀀싱된 리드, k-mer, 인덱스, 위치, 페어드 리드 등에 대한 정보를 저장하는 auxiliary data structures가 있습니다.
+
+- 시퀀싱 오류 및 반복 구조물 처리: 시퀀싱 오류 및 반복 구조물과 같은 문제를 처리할 수 있는 기능을 제공합니다.
+
+- 품질 정보의 통합: 품질 정보를 통합하여 Genome Assembly에 활용할 수 있습니다.
+
+- 다양한 구현: 다양한 구현이 존재하며, 각각 다른 데이터 구조를 사용합니다.
+
+  - Velvet, ABySS, AllPaths, Meraculous, SOAPdenovo 등이 있습니다.
+  - 해시 테이블, 블룸 필터, FM 인덱스 등과 같은 다양한 데이터 구조를 사용합니다.
+
+  - 단일 최적의 구현과 매개변수 설정이 없음: 각 소프트웨어 및 매개변수 설정에 따라 결과가 달라지므로 여러 소프트웨어 및 매개변수를 시도해 보는 것이 좋습니다.
+
+### Scaffolding
+
+
+**Scaffolding**은 Genome Assembly의 단계 중 하나로, contigs를 Assembly한 후에 Contig 간의 상대적인 위치와 방향을 결정하여 Assembly된 Contig를 연결하는 과정을 말합니다. 이를 통해 보다 긴 연속적인 서열을 얻을 수 있으며, Genome의 구조 및 조직을 더 정확하게 파악할 수 있습니다.
+
+ 주요 단계:
+
+- **Contig Assembly**: 먼저 시퀀싱 데이터에서 Contig를 Assembly합니다. Contig는 Genome Assembly 과정에서 시퀀싱 데이터를 통해 얻은 부분 서열로, 일반적으로 수십에서 수백 개의 염기서열로 구성됩니다.
+
+- **Link Data Collection**: 다양한 유형의 실험 데이터를 사용하여 Contig 간의 연결을 파악하는 링크 데이터를 수집합니다. 이러한 데이터는 예를 들어, 서로 근접하는 리드들 간의 연결 정보, 인접한 Contig 간의 링크 정보 등을 포함할 수 있습니다.
+
+- **Scaffolding Algorithm**: 수집된 링크 데이터를 기반으로 스카폴딩 알고리즘을 적용하여 Contig 간의 상대적인 위치와 방향을 결정합니다. 이 과정에서는 보통 그래프 이론을 활용하여 Contig 간의 연결 정보를 그래프로 나타내고, 이를 분석하여 최적의 스카폴딩 결과를 도출합니다.
+
+- **Scaffold Generation**: 결정된 Contig 간의 상대적인 위치와 방향에 따라 스카폴드를 생성합니다. 스카폴드는 Contig 간의 연결 정보를 포함하는 서열 조각으로, 보다 긴 연속적인 서열을 나타냅니다.
+
+다음과 같은 특징을 가집니다:
+
+- 컨티그의 순서, 방향, 거리 추론: 스카폴딩 과정에서는 컨티그 간의 상대적인 순서와 방향, 그리고 간격 등을 추론합니다. 이를 통해 보다 정확한 Genome 구조를 파악할 수 있습니다.
+
+- 컨티그를 연결하는 과정에서는 **일시적으로 N(unknown base)으로 채워진 공백을 사용**하여 컨티그를 연결합니다. 이를 통해 보다 긴 스카폴드를 생성할 수 있습니다.
+
+- 스카폴딩은 genome assembly 과정의 일부로서, 컨티그 Assembly 후에 수행됩니다. 이 단계에서는 컨티그의 상대적인 위치 및 방향을 파악하여 보다 긴 연속적인 서열을 생성하는 것이 목표입니다.
+
+#### with Mate pairs
+
+
+**Mate pair(메이트 페어)**란 Genome 시퀀싱 과정에서 생성되는 한 쌍의 서열이 다른 서열에 붙어있는 특별한 형태의 DNA 프래그먼트를 가리킵니다. 메이트 페어는 서열의 특정 위치에 배치된 특별한 서열 태그를 사용하여 식별됩니다. 이들은 일정한 거리로 서로 반대 방향으로 정렬되어 있습니다. Genome Assembly 과정에서 메이트 페어의 거리 정보를 사용하여 컨티그를 연결하고, 맵핑 과정에서는 메이트 페어를 사용하여 Genome 서열의 상대적인 위치를 파악할 수 있습니다.
+
+이 mate pairs를 가지고 scaffolding을 할 수 있습니다:
+
+- **Mate pairs 간의 거리 파악**: Mate pairs 사이의 거리는 이미 알려져 있습니다.
+- **Mate pairs가 컨티그에 정렬됨; 그래프 구조의 생성 및 해결**: Mate pairs는 컨티그에 정렬되며, 이를 기반으로 그래프 구조가 생성되고 해결됩니다.
+- 그러나 긴 반복 구조물을 해결할 수 없으며, 장거리를 통해 컨티그를 연결할 수 없습니다.
+
+
+#### with long reads
+
+long reads를 이용해 scaffolding을 진행할 수도 있습니다. 
+
+- **long reads는 ≥2개의 컨티그를 연결할 수 있음**: long reads는 보다 긴 연속적인 서열을 가지고 있기 때문에 두 개 이상의 컨티그를 연결할 수 있습니다.
+- **컨티그와 long reads의 정렬 또는 혼합 어셈블러 사용**: 스카폴딩을 위해 컨티그와 long reads를 정렬하거나, 짧은 리드와 long reads를 모두 입력으로 사용하는 하이브리드 어셈블러를 사용할 수 있습니다.
+- **문제점: long reads는 일반적으로 훨씬 더 높은 오류율을 가짐**: long reads는 일반적으로 높은 오류율을 가지고 있기 때문에, 이러한 오류를 처리하는 것이 도전적일 수 있습니다.
+
+#### with long range linkage information
+
+예: HiC, Chromosome Conformation Capture
+
+- HiC 및 염색체 구조 캡처는 3차원 유전체 구조를 연구하기 위해 설계되었습니다.
+- 물리적으로 인접한 유전체 영역을 식별합니다. 즉, 3차원 공간에서 물리적으로 인접한 영역은 1차원에서도 더 가까이 위치해 있을 것으로 예상됩니다.
+-  HiC 및 염색체 구조 캡처는 스카폴딩을 위해 드래프트 Genome assembly에 사용될 수 있습니다.
+- 그러나 스카폴딩을 위해 사용되는 장거리 연결 정보를 통해 컨티그의 정확한 거리와 방향은 알려져 있지 않습니다.
+
+![](./longrange.PNG)
+
+### Finishing genome assembly
+
+- **대부분의 short read 어셈블리는 스카폴드로 유지됨**: 주로 짧은 read를 사용한 어셈블리는 스카폴드 형태로 유지됩니다. 이는 각 스카폴드가 특정한 염색체로 할당되지 않고, 여전히 큰 갭이 존재하기 때문입니다. 이로 인해 유전체의 완전한 모습을 파악하는 데에는 제약이 있을 수 있습니다.
+- **갭 채우기 및 염색체 수준 어셈블리는 비용이 많이 들고 시간이 많이 소요됨**: 스카폴드 내의 갭을 채우고, 각각의 스카폴드를 특정 염색체에 할당하여 염색체 수준의 완전한 어셈블리를 완성하는 것은 많은 비용과 시간이 소요되는 작업입니다. 이는 더 정확하고 완벽한 유전체 모델을 얻기 위해서는 필수적인 단계입니다.
+- **long read: 현재는 더 많은 염색체 수준의 어셈블리가 가능**: 최근에는 long read를 사용하여 더 많은 염색체 수준의 어셈블리가 가능해졌습니다. long read를 활용하면 더 긴 서열을 얻을 수 있으므로, 보다 정확하고 완벽한 유전체 어셈블리를 가능하게 합니다. 이는 single read 어셈블리보다 염색체 수준의 어셈블리를 완성하는 데에 더욱 효과적인 방법입니다.
+
+### Evaluation
+
+
+어셈블리 결과의 평가는 다음과 같습니다.
+
+- paired reads의 배치 (방향, 거리): 어셈블리 결과의 품질을 평가하기 위해 paired reads의 배치를 확인합니다. 이는 reads가 어셈블리된 컨티그나 스카폴드에 대해 올바른 방향과 거리에 배치되었는지를 확인하는 것을 의미합니다.
+
+- quality metrics의 계산: 어셈블리의 품질을 평가하기 위해 다양한 메트릭을 계산합니다.
+
+  - 컨티그와 스카폴드의 개수 및 길이
+  - N50 값: 전체 어셈블리의 50%가 이 길이 이상의 컨티그/스카폴드에 포함되어 있는 값
+
+- 주어진 계통에 대한 예상 유전자 콘텐츠의 양적 평가: 특정 계통에서 예상되는 유전자 콘텐츠를 양적으로 평가합니다.
+
+- 계통별로 표준 유전자 검사 (BUSCO)를 사용한 검사: 특정 계통에서 예상되는 표준 유전자의 유무를 평가합니다.
+
+  - 얼마나 많은 표준 유전자가 완전한 상태로 존재하는지
+  - 얼마나 많은 표준 유전자가 부분적으로 존재하는지 
+  - 얼마나 많은 표준 유전자가 없는지
+  - 얼마나 많은 표준 유전자가 중복되어 있는지
+  ```
+  12 contigs, total length: 580
+  contig lengths = 10,30,30,40,40,40,50,50,60,70,70,90
+  N50 = 60
+  ```
+
+### Genome sequence
+
+Genome sequence는 한 종의 생물에서 발견되는 모든 DNA 서열의 집합을 의미합니다. 유전체 서열은 주로 다음과 같은 특징을 가집니다.
+
+Nuclear Genome:
+
+- Diploid: 대부분의 생물은 쌍핵을 가지며, 각 염색체는 두 개의 유전자를 가지고 있습니다.
+- Homozygous & Heterozygous Positions: 
+  
+  Homozygous Positions는 두 개의 동일한 염색체에서 같은 염색체에서 동일한 염색체에서 동일한 서열을 나타내는 위치를 의미하며, Heterozygous Positions는 두 개의 다른 염색체에서 다른 서열을 나타내는 위치를 의미합니다.
+- Haplotypes: 각 염색체의 유전자들의 서열 패턴을 의미합니다.
+- Multiple Linear Chromosomes: Nuclear Genome은 여러 개의 선형 염색체로 구성되어 있습니다.
+
+**current available data**
+
+- **Contigs & Scaffolds**: 현재 대부분의 유전체 서열 데이터는 컨티그와 스카폴드 형태로 제공됩니다. 컨티그는 시퀀싱 데이터를 조립하여 얻은 일련의 연속적인 염기서열을 나타내며, 스카폴드는 이러한 컨티그를 더 긴 연속적인 서열로 연결하여 얻은 결과물입니다.
+- **unordered, incomplete, (potentially) missassembled**: 현재의 Genome assembly은 여전히 비정렬되어 있고, 완전하지 않으며, 때로는 잘못 조립된 상태일 수 있습니다.
+- **scaffold length & quality depends on repeat content**: 스카폴드의 길이와 품질은 해당 유전체 내의 반복적인 영역의 내용에 따라 달라집니다. 반복이 많은 지역은 스카폴드의 길이와 품질을 저하시킬 수 있습니다.
+- **useful but contain missing/fragmented data**: 스카폴드는 유용하지만 종종 부족하거나 파편화된 데이터를 포함할 수 있습니다.
+- **chromosome-level assembly**: 초기에는 매우 적은 수의 진핵생물에 대해서만 염색체 수준의 어셈블리가 가능했습니다. 그러나 최근에는 장기 리드 기술을 기반으로 한 어셈블리를 통해 점점 더 많은 종의 염색체 수준 어셈블리가 가능해지고 있습니다. 단, 이러한 어셈블리에는 여전히 N으로 구성된 긴 영역이 포함될 수 있습니다.
+
+### SLURM
+
+**Slurm (Simple Linux Utility for Resource Management)**은 리눅스 시스템에서 작업 스케줄링 및 자원 관리를 위한 오픈 소스 클러스터 관리 소프트웨어입니다.
+
+주요 특징:
+
+- 자원 관리: Slurm은 클러스터의 자원을 효율적으로 관리하고 할당합니다. 이는 CPU, 메모리, GPU, 네트워크 등을 포함합니다.
+- 작업 스케줄링: 사용자가 제출한 작업을 적절한 노드에 할당하여 실행합니다. 이때 시스템 자원의 이용률을 최적화하고 작업의 대기 시간을 최소화합니다.
+- 유연성: Slurm은 다양한 유형의 작업을 지원하며, 사용자가 필요에 따라 작업을 조정하고 제어할 수 있는 다양한 옵션을 제공합니다.
+- 확장성: 대규모 클러스터에 대한 확장성을 갖추고 있어 수천 대의 노드와 수만 개의 작업을 지원할 수 있습니다.
+- 사용자 관리: 사용자 및 그룹의 계정 및 권한을 관리할 수 있습니다.
+- 모듈화: 다양한 플러그인 및 모듈을 지원하여 클러스터 환경을 사용자의 요구에 맞게 확장할 수 있습니다.
 
