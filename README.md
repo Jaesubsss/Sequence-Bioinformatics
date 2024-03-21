@@ -114,6 +114,45 @@
     - [BLAST Result](#blast-result)
     - [Masking low-complexity regions (LCR)](#masking-low-complexity-regions-lcr)
     - [How to improve BLAST searches\*](#how-to-improve-blast-searches)
+  - [Lecture 9: Multiple Sequence Alignment](#lecture-9-multiple-sequence-alignment)
+    - [Positional Homology](#positional-homology)
+    - [Software](#software)
+    - [Progresive alignment](#progresive-alignment)
+      - [Sum-of-paris Score](#sum-of-paris-score)
+      - [Challenge](#challenge)
+      - [Iterative alignment(refinement)](#iterative-alignmentrefinement)
+    - [T-Coffee](#t-coffee)
+    - [Gap: MAS](#gap-mas)
+      - [Gap: PRANK](#gap-prank)
+    - [Large alignment](#large-alignment)
+    - [Selecting Software](#selecting-software)
+    - [Evaluating Alignment](#evaluating-alignment)
+    - [Meta Alignment](#meta-alignment)
+      - [M-Coffee](#m-coffee)
+    - [MSA](#msa)
+  - [Lecture 10: HMM](#lecture-10-hmm)
+    - [Position-specific scoring matrix (PSSM)](#position-specific-scoring-matrix-pssm)
+    - [Generative Model](#generative-model)
+    - [HMM](#hmm)
+      - [Profile Hidden Markov Model](#profile-hidden-markov-model)
+      - [Emissions](#emissions)
+      - [HMMer](#hmmer)
+      - [Pros and Cons](#pros-and-cons)
+  - [Lecture 12: Phylogenies I](#lecture-12-phylogenies-i)
+    - [Phylogenetic Tree](#phylogenetic-tree)
+      - [Rooting Tree](#rooting-tree)
+      - [Resolved vs unresolved trees](#resolved-vs-unresolved-trees)
+    - [Gene Tree](#gene-tree)
+      - [Homologuous genes](#homologuous-genes)
+      - [Duplication // loss](#duplication--loss)
+      - [Terms](#terms)
+      - [In general](#in-general)
+    - [Substitution Model](#substitution-model)
+      - [Rate variation](#rate-variation)
+      - [Choosing Model](#choosing-model)
+    - [Inferring phylogeny](#inferring-phylogeny)
+      - [Neighbor Joining](#neighbor-joining)
+  - [Lecture 13: Phylogenies II](#lecture-13-phylogenies-ii)
 
 
 ## Lecture 1: Intro 
@@ -1616,7 +1655,7 @@ Sensitivity와 Specificity는 모델의 예측 능력을 평가하는 데 중요
 - similarity with transcripts(RNA-seq, long reads RNA-seq)을 통한 예측:
   - 엑손과 스플라이싱 패턴을 식별하는 데 사용될 수 있음.
   - 문제점으로는 paralogs, short reads의 배치, snapshot이 있음.
-  - 선호되는 매우 흔한 방법이다.
+  - 선호되는 매우 흔한 방법입니다.
 
 - 단백질 Similarity을 통한 예측:
   - 밀접한 친척의 proteome(예: UniProtKB)을 사용함.
@@ -2026,6 +2065,8 @@ scoring matrix를 얻는 방법은 주로 관련된 단백질 간의 신뢰할�
 
 그러나, 서로 다른 진화적 과정을 거쳐온 시퀀스들은 서로 다른 값을 가지기 때문에, 분석하고자 하는 시퀀스 쌍에 따라 다른 scoring matrix를 사용해야 합니다. 
 
+이런 substitution matrices는 시퀀스 간의 similarities혹은 근연관계를 식별하는데 쓰이거나, alignment를 optimize하는데 사용될 수 있습니다. 
+
 #### PAM
 
 Point Accepted Mutation (PAM)은 단백질 서열에서 하나의 아미노산이 다른 아미노산으로 치환되는 것으로 natural selection 과정에 의해 일어납니다. 
@@ -2323,3 +2364,596 @@ LCR은 BLAST 정렬 결과에서 'X'로 나타납니다. 이를 통해 사용자
   * **primer sequences**: 너무 짧기 때문에 다른 방법을 사용해야 함
   * **assembly**: 보다 특화된 도구들이 존재
   * **cDNA를 게놈에 대조하는 경우**: 보다 특화된 정렬 도구들이 존재
+
+
+## Lecture 9: Multiple Sequence Alignment
+
+MSA는 여러 시퀀스 간의 similarity를 고려하여 서열을 align하는 과정입니다. 주로 fasta 포맷의 파일을 사용합니다. 
+
+MSA는 일단 BLAST search에 사용될 수 있습니다. 혹은 수집된 서열들을 align해서, 서열간의 유사성을 기반으로 최적의 alignment를 찾는데 사용됩니다. 
+
+MSA는 시퀀스가 얼마나 잘 보존되었는지를 평가합니다. 서열의 residues들을 열별로 정리하여 align한 뒤, 주어진 scoring scheme에 따라 스코어를 매깁니다.
+
+MSA는 따라서 추가적인 분석에도 사용될 수 있습니다. 예를 들어, 여러 시퀀스에서 동일하게 conserved된 영역을 식별하고 비교하면, 진화적으로 서열의 기능에 매우 중요한 부분을 찾을 수 있습니다. 
+
+분석에는 다양한 알고리즘이 사용될 수 있겠지만, 대표적으로 HMM이 있습니다. 
+
+### Positional Homology
+
+Positional homology는 MSA의 진화적 분석 맥락에서 사용되는 개념입니다. 이는 서로 상호 관련된 시퀀스에서 residues의 positional homology가 homologues sequence에서 파생되었음을 가정하는 가설입니다. 
+
+MSA에서 aligned된 서열 간에는 positional hology가 존재하며, 이는 서로 **공통 조상 서열**에서 파생되었음을 추측할 수 있습니다. col에서의 변화는 돌연변이를 나타내고, 이는 두 서열의 공통 조상에서부터의 진화적 거리에 비례할 수 있으며, 이는 서열간의 진화적 관계를 이해하는데 중요한 정보를 제공합니다. 
+
+이러한 positional homology는 어째서 등장합니까?
+
+우리는 multiple domain protein을 예시로 생각해볼 수 있습니다. 서로 다른 멀티 도메인 단백질들은 서로 다른 구조를 가집니다. 그러나 이들이 공통 조상 서열에서 유래한 도메인을 가지고 있을 경우, 이들을 align하면 이 부분이 locally aligned될 것이고, 이를 통해 우리는 이 보존된 서열이 공통 조상 서열에서 유래된 position homology라고 유추할 수 있습니다.
+
+### Software
+
+MSA는 일반 sequence alignment방법과 마찬가지로 크게 de novo alignment와 reference or seed-based methods로 나뉩니다.
+
+이에 대해 여러 소프트웨어가 있으며, 각기 다른 목적, 다른 방식으로 작동합니다.
+
+- De novo
+  - Dialign: 여러 로컬 얼라인먼트를 수행하며, 서열간의 로컬 유사성을 고려하여 정렬을 수행합니다.
+  - Clustal, MAFFT: 서열을 점진적으로 정렬하여 최종 정렬을 생성합니다. 일반적인 방법입니다. 
+    - T-Coffee, MAFFT: 서열간의 일관성(consistency)을 최대화하여 정렬을 수행합니다.
+    - Prank: 서열간의 진화적 관련성을 고려합니다.
+    - MAFFT: 대량의 데이터셋에 대해 효율적인 매우 빠른 휴리스틱 알고리즘입니다.
+  - PASTA: 거대한 데이터셋을 다루기 위해 분할정복을 사용합니다.
+  - M-Coffee: 다양한 MSA 툴의 결과를 결합하여 보다 정확한 정렬을 얻습니다.
+- Reference or seed-based methods
+  - HMMer: 확률적 접근 방법으로, 서열의 확률적 모델을 사용하여 정렬합니다. 
+
+
+### Progresive alignment
+
+점진적 정렬방법입니다. 주요단계는 다음과 같습니다.
+
+1. pairwise distance matrix를 계산
+2. alignment score를 이용하여 guide tree를 만듭니다.
+3. 가장 비슷한 두 서열에서 정렬을 시작합니다.
+4. 가이드 트리를 사용하여 서열을 그룹화하고, 서로 가까이 위치한 관련성이 높은 서열을 먼저 정렬합니다. 그런 다음, 이러한 sub-alignment를 기반으로 점진적으로 더 멀리 떨어진 서열을 추가하면서 전체적인 MSA를 완성합니다.
+5. 서열 간의 서로 다른 관련성을 고려하여 점진적으로 서열을 추가함으로써, 서열 간의 유사성이 높은 영역은 "얼려진(frozen)" 상태로 유지됩니다. 이는 서열의 구조적인 유사성을 보존하고 다중 서열 정렬의 정확성을 유지하는 데 도움이 됩니다.
+
+Guide tree는 neigbor-joining나 UPGMA와 같은 효율적인 clustering method로 만듭니다. 
+또한 dynamic programming alignment 보다는 distance를 바탕으로 alignment를 진행합니다.
+
+또 sub-alignment에 대한 profile을 계산합니다. 각 열에 대한 residue conservation 및 통계적 정보에 대해 요약합니다.
+
+이러한 progressive MSA는 가장 빠른 방법이며, MS pairwise alignment보다도 빠릅니다. 그러나 첫 두 서열에 의해서 서열정렬의 정확성이 정해지고, 에러가 나머지 부분에 영향을 미치기 때문에 이를 보완하기 위한 방법이 iterative MSA입니다. 
+
+#### Sum-of-paris Score
+
+이는 MSA의 품질을 측정하는데 사용되는 score 척도입니다. 
+
+이 점수를 계산하기 위해,
+
+- 각 열에서 서열들은 통계적으로 독립적이라고 가정
+- substitution matrix를 사용하여 서열간의 유사성을 평가
+- 모든 서열 pairs의 점수를 합산하여 계산됨
+
+각 서열 pairs에 대한 weight sum of pairs(WSP)가 계산될 수 있습니다. 이때 이 평균은 진화적 분포를 고려하여 서열 간의 bias를 조정합니다. 
+
+#### Challenge
+
+좋은 MSA를 위해서는 여러가지 조건들이 만족되어야 합니다. 그러나 이들은 기술적 한계 등으로 인해 충족되지 못한 경우가 대부분입니다. 다음과 같은 것들이 있습니다. 
+
+- MSA의 결과는 실제 생물학적 의미와 일치해야합니다. 즉, MSA는 서열간의 진화적 관련성을 올바르게 나타내고, 공통조상의 위치를 정확하게 추론해야 합니다. 그러나 이는 쉽지 않습니다.
+
+- 서열간의 유전적 거리가 매우 큰 경우, 일반적인 서열 정렬 알고리즘은 유용하지 않을 수 있습니다. 
+- 대규모 데이터셋의 정렬에는 시간과 많은 자원이 소모됩니다. 따라서 효율적이고 빠른 방법이 필요합니다. 보통 대규모 데이터셋을 처리하는데 사용되는 방법은 일부 정보를 손실하거나 근사화하는 경향이 있으며, 정확성을 보장하기 어렵습니다.
+- NP-complete문제입니다. 최적의 해를 찾는것은 계산적으로 어렵습니다. 따라서 대부분의 알고리즘은 최적 해 대신 근사 해를 찾도록 설계됩니다. 
+
+여러 Challenge들이 있지만, 많은 것들이 여러 소프트웨어에서 해결되었습니다. 
+
+- Errors that are frozen in subalignments
+  - 한번 정렬된 sub-alignment들은 frozen되며, 이후 수정되지 않습니다. 이는 처음 생긴 오류가 고정되어 마지막까지 이어질 수 있다는 것을 의미합니다. 그러나 오류들은 다른 서열들과의 비교를 통해 해결될 수도 있습니다. 이를 위해 초기에 얻은 sub-alignment들을 기반으로 전체정렬을 개선하는 반복적인 과정을 수행하여 오류를 최소화 합니다. 이는 위에서 언급한 iterative alignment로, 대부분의 프로그램에서 수행됩니다.
+- Suboptimal pw alignments in MSA
+  - sub-alignment에서 발생하는 suboptional pw ailgnment문제를 해결하기 위해, consistency score를 도입합니다. 이 방법은 서로 다른 sub-optimal-alignment간의 consistency를 비교하여 더 나은 최종정렬을 얻습니다. T-Coffee는 이 방법을 사용합니다.
+- evolutionary correct (aware) MSAs
+  - 이를 위해, 일부 프로그램들(PRANK)는 갭 비용을 수정합니다.
+- guide tree takes long for huge data sets
+  - 거대한 데이터 세트의 가이드 트리 생성이 시간이 오래 걸릴 때, Clustal-O와 같은 일부 프로그램은 빠른 시퀀스 클러스터링 방법을 사용하여 가이드 트리 생성을 가속화합니다. 이를 통해 대규모 서열 집합에 대한 효율적인 다중 서열 정렬이 가능해집니다.
+
+
+#### Iterative alignment(refinement)
+
+Progressive alignment은 다중 서열 정렬의 강력한 방법이지만, 한 번 오류가 도입되면 이를 수정하기가 어려운 주요한 약점이 있습니다. 이는 서브 정렬(subalignments)에서 오류가 고정되어 있기 때문에 발생합니다. 이러한 약점을 극복하기 위해 후속 처리(post-processing) 중에 오류를 수정하는 해결책이 존재합니다. 가장 흔한 해결책은 iterative refinement(반복적 개선) 기술입니다. 이 기술은 대부분의 다중 서열 정렬 프로그램에서 구현되어 있습니다.
+
+Iterative MSA(Multiple Sequence Alignment)는 말 그대로 MSA 과정을 여러번 반복하는 동안 순서를 계속해서 재정렬하는 과정이며 이를 통해 최적화 할수 있는 Alignment방법입니다.
+
+MSA는 서브그룹내의 서열 pair-wise 재정렬을 시작으로 다시 subgroup을 재정렬 합니다.
+subgroup의 선택은 guide tree의 sequence 관계와 random selection, 등에 의하여 정해집니다. 핵심은, iterative MSA는 유전자 알고리즘과 숨겨진 마르코프 모델을 사용한 최적화 방법입니다. 하지만 단점은 프로세스가 로컬 최소값에 갇혀서 훨씬 느려질 수 있습니다.
+
+다른 방법도 있습니다. 가지고 있는 서열 중 몇 서열을 제거하고 재정렬할 수 있습니다.
+
+혹은 서열을 무작위로 트리기반으로 두 그룹으로 나눈 뒤, 재정렬 하고 다시 합칠 수 잇습니다.
+
+seq-profile, 혹은 profile-profile 정렬 후에 재정렬을 수행할 수 있습니다??
+  
+
+### T-Coffee
+
+T-Coffee는 최적 정렬을 선택하기 위해 다음과 같은 접근 방식을 취합니다:
+
+1. Sum of pairs Score를 최대화
+   - Sum of pairs score는 모든 서열 쌍의 점수 합으로, 이 점수가 가장 높은 정렬을 일단 최적 정렬로 선택합니다. 
+2. Consistency based alignment
+   - T-Coffee는 Consistency를 Objective Function으로 사용하여 최적의 정렬을 선택합니다. 이는 최적의 로컬 정렬 및 휴리스틱한 전역 정렬에서 발견된 서열의 쌍 간의 Consistency를 평가합니다. 이러한 Consistency는 서로 다른 서열 쌍 간의 정렬 결과가 얼마나 일치하는지를 나타냅니다.
+
+또한 T-Coffee는 extraneous information, 외부 정보를 포함할 수 있습니다. 
+
+T-Coffee는 또한 Position-Specific Library를 사용하여 정렬을 개선합니다. 이 라이브러리는 다음을 고려합니다:
+
+- 서열 쌍의 유사성: 각 서열 쌍의 유사성을 고려하여 서열의 조각(fragment)에서 나온 서열 쌍을 평가합니다.
+- 다른 모든 서열 쌍과의 일관성을 평가
+- xi와 yj를 정렬하는 데 필요한 점수: 각 위치별 서열 라이브러리를 기반으로 xi와 yj를 정렬하는 데 필요한 점수를 계산합니다.
+
+
+### Gap: MAS
+
+MSA에서 갭의 처리는 중요한 문제중 하나입니다. MSA에서 Deletion은 deletion이 발생한 위치에서만 패널티를 부여해야합니다. insertion또한 마찬가지로, 한번의 패널티만 적용됩니다.
+
+대부분의 MSA 메소드는 deletion과 insertion을 구분하지 않습니다. 그냥 각 위치의 gab을 deletion으로 간주하고, insertion을 구분하지 않습니다. 따라서 single insertion에 대해 과도한 패널티가 부여될 수 있습니다. 이 때문에 문제가 발생할 수 있습니다.
+
+이는 기존 갭이 있는 영역에서는 갭 비용을 줄이고, 기존 갭 주변에서는 갭 비용을 증가시키는 것으로 해결할 수 있습니다.
+
+그러나 한가지 문제가 더 있습니다. 위 방법으로, gab이 overlapping될 수 있습니다. 이는 **서로 인접하나 독립적인 각각의 insertions를 합칠 수 있습니다.** 
+
+![](./inser.PNG)
+
+이렇게되면 갭이 중첩될 수 있습니다. 이는 **정렬이 지나치게 압축되는 것을 유발**할 수 있습니다. 이는 **positional homology를 위배하고, 잘못된 정렬을 유발**할 수 있습니다.
+
+
+#### Gap: PRANK
+
+PRANK는 이 갭을 조금 다르게 처리합니다. 
+
+![](./prank.PNG)
+
+PRANK는 갭을 처리하기 위해 ancester 서열을 계산합니다. 이를 통해 각 위치에 대해 추가 서열을 생성하여 갭을 insert합니다. 
+
+또한 PRANK는 ancester sequence에 insertion을 표시하여 해당 insertion이 추가적으로 패널티를 받지 않도록 합니다. 이는 후속 정렬 단계에서 해당 삽입이 잘못된 매치나 패널티를 받지 않도록 보장합니다.
+
+PRANK는 보다 밀도가 높은 샘플링 및 가이드 트리가 실제 트리와 일치할 때 보다 향상된 결과를 제공합니다. 이는 정확한 가이드 트리와 밀도가 높은 샘플링이 정렬 품질을 향상시킬 수 있다는 것을 의미합니다.
+
+따라서 PRANK가 제공하는 MSA 결과는 다른 프로그램들에 비해 넓은 갭을 나타냅니다. 이는 다른 프로그램들에선 포인트 뮤테이션의 중첩에 의한 shrinkage/expansion이 발생했기 때문입니다. 
+
+### Large alignment
+
+대규모 정렬에 대해서는 주로 MAFFT, Clustal-Omega, PASTA가 사용됩니다.
+
+이들은 클러스터링과 가이드 트리를 사용하여 pairwise comparision을 신속하게 수행합니다. 그러나, 이러한 방법들은 정확도를 감소시킵니다. 이들의 정확도는 60퍼센트밖에 되지 않습니다. 
+
+또한 대규모 데이터셋에서는 대부분의 정렬 프로그램이 완료되지 못합니다. 이는 시간과 리소스의 한계때문입니다. 그러나, 낮은 정확도로는 비교적 빠르게 완료될 수 있습니다.
+
+알맞는, best 정렬 프로그램을 사용하거나, 또는 indel의 evolution rate가 낮은 경우에는 빠르게 정렬을 완료할 수 있습니다.
+
+이런 대규모 정렬은 MSA, phylogenetics, evolutionary analysis, protein structure prediction의 분야에서 사용되기 때문에, 여전히 필요합니다.
+
+따라서 분할정복 방법(Sate, PASTA, SATCHMO-JS, PROMALS, MAPGAPS)이나 시드 기반 접근방법(Sate, PASTA, SATCHMO-JS, PROMALS, MAPGAPS)을 더 사용할 수 있습니다. 
+
+이미 시중에는 100개가 넘는 프로그램들이 존재합니다. 이들은 서로 다른 휴리스틱을 사용하고, 모든 프로그램에서 에러는 피할 수 없습니다. 따라서 에러의 양과 부정확성에 대해 고려해야합니다.
+
+따라서 소프트웨어를 선택하는 것과 얻어진 정렬을 잘 평가하는것이 중요합니다.
+
+### Selecting Software
+
+- 정렬의 accuracy:
+
+  해당 방법이 (근사적으로) 올바른 정렬을 재구성할 수 있는지 확인해야 합니다. 그러나 실제로는 진정한 정렬이 대부분 알려져 있지 않기 때문에 이는 일종의 도전적인 문제입니다.
+
+- Methode의 강점과 약점:
+
+  해당 방법의 출판된 강점과 약점을 고려해야 합니다. 이는 방법이 더 빠르거나 정확한지, 적은 양의 서열이나 많은 양의 서열에 적합한지, 구조적 또는 진화적 분석에 적합한지 등을 파악하는 데 도움이 됩니다.
+
+- 벤치마크 데이터셋에 대한 테스트:
+
+  해당 방법이 벤치마크 데이터셋 또는 기준 데이터셋에 대해 테스트되었는지 확인해야 합니다. 이러한 데이터셋은 일반적으로 알려진 정렬에 대한 비교를 통해 방법의 성능을 평가하는 데 사용됩니다.
+
+- Balibase 또는 모의 정렬을 기반으로 한 테스트:
+
+  구조 기반 정렬에 대한 Balibase 또는 모의 정렬과 같은 테스트 케이스를 기반으로 한 테스트를 통해 방법을 평가할 수 있습니다. 이러한 테스트는 일반적으로 다양한 상황에서 방법의 성능을 평가하는 데 도움이 됩니다.
+
+### Evaluating Alignment
+
+정렬을 평가할 때 다음과 같은 기준을 사용할 수 있습니다:
+
+- Column 기준으로 평가:
+
+  - **각 열이 얼마나 일관되게 정렬되었는지**를 확인합니다. **다른 방법 간의 정렬 또는 동일한 방법 내의 다른 서열 간의 일관성을 평가**할 수 있습니다. 예를 들어, M-Coffee는 다양한 정렬 방법을 결합하여 일관된 정렬을 생성합니다.
+
+- 서열 또는 서열 region별로 평가:
+
+  - 정렬이 non-homologue 서열인지 여부를 확인합니다. non-homologue 서열은 잘못된 정렬을 나타낼 수 있습니다.
+  - homologue 서열 중 잘못된 정렬이 있는지 확인합니다. 이는 서열 간의 진정한 identity를 보장하는 데 중요합니다.
+  - non-homologue 서열 구간, 즉 조립 또는 주석 오류와 같은 정렬이 부적절한 구간을 식별합니다.
+
+- 전체 점수로 평가:
+
+  - 전체적인 정렬의 점수를 통해 정렬의 품질을 평가할 수 있습니다. 이 접근 방식은 일반적으로 각 열 또는 서열의 일관성을 종합하여 종합적인 평가를 제공합니다.
+
+### Meta Alignment
+
+메타-alignment는 여러 다른 방법을 사용하여 생성된 다양한 정렬을 조합하거나 평균화하여 단일 "최선" 정렬을 생성하는 방법입니다. 이는 여러 다른 정렬 방법을 사용하여 동일한 입력 데이터에 대해 여러 번 정렬한 후 결과를 조합하여 더 일관된 또는 종합된 정렬을 얻는 것을 의미합니다.
+
+meta alignment는 여러 다른 방법으로 생성된 각 정렬의 투표를 진행하여 각 위치에 대해 가장 많은 투표를 받은 서열을 선택합니다. 이렇게 하면 가장 많은 방법에서 동의한 정렬을 얻을 수 있습니다.
+
+또는 각 위치의 서열에 대해 여러 다른 정렬 방법을 사용하여 생성된 점수의 중간값을 계산합니다. 중간값은 이상치에 민감하지 않으므로, 이를 사용하여 일관된 정렬을 생성할 수 있습니다.
+
+- M-Coffee와 같은 Meta Alignment 도구:
+
+  다양한 정렬 방법을 사용하여 각각의 서열에 대해 다양한 정렬을 생성한 후, 이러한 다양한 정렬을 통해 원래의 입력 서열에 대한 일관된 정렬을 생성합니다. M-Coffee는 서로 다른 방법을 결합하여 일관된 정렬을 생성하는 데 사용됩니다.
+
+
+#### M-Coffee
+
+M-Coffee는 여러 가지 대안적인 다중 서열 정렬(MSA)을 결합하여 하나의 최종 출력을 생성하는 도구입니다. M-Coffee의 아이디어는 독립적인 방법에 의해 생성된 오류가 일관되어서는 안 된다는 것입니다. 따라서 서로 다른 방법 간에 일치가 발생한다면 올바른 정렬을 시사합니다. 그러나 상관된 방법은 M-Coffee의 가정을 위배하며, 방법 선택이 중요합니다.
+
+M-Coffee의 접근 방법은 다음과 같습니다(주로 T-Coffee를 기반으로 합니다):
+
+1. 여러 서열 정렬(MSA)을 포함하는 라이브러리를 구성합니다.
+
+2. 다양한 MSA를 하나의 새로운 MSA로 결합합니다. 이를 통해 각 서열의 적절한 배치를 유지하면서 다양한 방법에서 나온 서로 다른 조정을 통합할 수 있습니다.
+3. T-Coffee와 같은 방법으로 서로 다른 정렬을 비교하고 평가하여 새로운 MSA에 점수를 할당합니다. 이 점수는 색 또는 숫자 형식으로 제공됩니다.
+
+### MSA
+
+MSA를 평가함으로써, 불확실성이나 alignment가 잘 수행되지 않은 부분을 찾을 수 있습니다.
+
+이런 부분을 찾는다면, 부적절한 서열 또는 영역을 제거할 수 있습니다. 이것은 정렬의 품질을 개선시킵니다. 또한 낮은 점수를 받는 부분을 마스킹 하여 후속 분석에서 무시할 수 있습니다. 이를 통해 부정확한 결과가 전체 해석에 영향을 미치는것을 방지할 수 있습니다. 
+
+MSA는 homologus coding sequence(DNA, Protein)에 대해 사용될 수 있습니다. 주로 linear or global alignment에 사용되고, 서열간의 구조적 유사성이나 기능적 연관성을 파악할 수 있습니다.
+
+MSA가 genome이나 genome scaffold에 사용되는 경우, inversion, translocation, duplication등을 찾을 수 있습니다. 이 밖에도, 동질한 블록을 식별하고 이러한 블록을 정렬할 수 있습니다.
+
+MSA가 RNA 패밀리에 사용되는 경우, 이는 서열이 아닌 2차 구조의 보존에 중점을 둡니다. 서열보다는 2차구조의 보존을 파악하여 RNA 패밀리 간의 관계를 분석합니다. 
+
+## Lecture 10: HMM
+
+단백질 패밀리 정렬에서, position-specific information은 중요합니다. 같은 단백질 패밀리 내에서라도 서로 다른 영역은 서로 다른 보존 수준을 나타낼 수 있기 때문입니다. 또한, 서로다른 영역은 서로 다른기능적이나 구조적 제약을 가질 수 있습니다. 일부 영역은 특정 기능이나 구조를 유지하기 위해 보존되어야 하지만다른 영역은 더 큰 다양성을 허용할수도 있습니다.
+
+또한, 서로 다른 영역은 서로 다른 선택압을 받습니다. 
+
+이 position specific information은 통계적으로 다뤄질 수 있습니다. 
+
+### Position-specific scoring matrix (PSSM)
+
+PSSM은 단백질 또는 DNA 서열의 각 위치에서 특정 아미노산 또는 염기에 대한 점수를 나타내는 행렬입니다. 이 행렬은 주어진 위치에서 특정 서열 요소의 발생 가능성을 나타내며, 주어진 위치의 특성을 보다 정확하게 모델링하는 데 사용됩니다.
+
+PSSM은 주로 단백질 또는 DNA 서열의 정렬에서 생성됩니다. 먼저, 서열 정렬에서 위치별 점수를 계산하기 위해 통계적 프로필 또는 정렬 프로필을 만듭니다. 이 프로필은 각 위치에서 특정 아미노산 또는 염기의 발생 빈도를 나타냅니다. 그런 다음, 이러한 빈도를 바탕으로 위치별로 점수를 할당하여 PSSM을 생성합니다.
+
+![](./pssm.PNG)
+
+PSSM은 일반적으로 BLOSUM이나 PAM과 같은 점수 행렬과 유사한 형태를 가지고 있습니다. 각 위치에서 특정 아미노산 또는 염기에 대한 점수는 해당 위치에서의 발생 빈도와 관련이 있습니다. 더 높은 점수는 해당 위치에서 특정 아미노산 또는 염기의 발생이 더 자주 발생한다는 것을 나타냅니다.
+
+이를 사용하는 툴로는 PSI-BLAST가 있습니다. 
+
+![](./psi.PNG)
+
+이는 BLAST의 변형으로써, 기본 BLAST와 유사하게 작동하지만 iterative 단계에서 이전 단계에서 찾은 유사한 서열을 사용하여 PSSM을 만듭니다. 이는 초기 쿼리 서열과 유사한 서열을 반복적으로 찾아내어, 보다 빈감한 서열 유사성 검색을 제공합니다. 이를 통해 초기단계에서 식별하지 못한, 약간의 similarity가 있는 서열도 식별할 수 있습니다. 
+
+### Generative Model
+
+아래는 간단한 예시입니다.
+
+- ACGCT 0.8×0.6×1.0×0.6×0.8 = 0.2304
+- CGGTA 0.2×0.4×1.0×0.2×0.2 = 0.0032
+- TCGCT 0.0×0.6×1.0×0.6×0.8 = 0
+
+문제는 이상태로 프로파일을 생성할 시, 일부 드문 base에 대해서는 0의 확률이 나올 수 있다는 것입니다. 자연에는 완전 0의 확률은 존재하지 않기 때문에, 이를 조정해야합니다.
+
+우리는 드문 요소에 대해 각 열에 pseudocounts를 삽입함으로써 아미노산 출현빈도를 증가시킬 수 있습니다. 
+
+### HMM
+
+HMM은 가장 가능성이 높은 MSA를 결정하기 위해서 gap, match,mismatch의 가능한 조합에 확률을 부여하는 방식입니다.
+HMM은 생물학적 중요도를 평가하기 위해서 single high scoring, local alignments, global alignments를 output으로 내줄 수 있습니다.
+
+HMM의 그래프는 directed acyclic graph로 표현할 수 있습니다.
+이 그래프에서 노드는 MSA에 있는 column의 entry입니다.(즉 단백질이면 아미노산입니다!)
+여기서 만약 해당 column이 완전히 보존되었다면 single node로 표현됩니다.
+(보존되었다라는 것의 의미는 MSA에 전재하는 모든 시퀀스들에서 해당 위치의 아미노산이 모두 같음을 의미)
+
+그렇게해서 각 state에 대한 확률을 구해가면서 중요한 시퀀스를 뽑아냅니다.
+
+HMMs은 숨겨진 상태(hidden state)와 관측 가능한 결과(outcomes) 간의 확률적 상호작용을 모델링하는 데 사용되는 확률적 모델입니다. 이 모델은 다음과 같은 구성 요소로 이루어져 있습니다:
+
+- **은닉 상태(states)**: 실제로 관찰되지 않지만 모델이 있는 상태를 나타냅니다. 각 상태는 모델이 취할 수 있는 내부 상태를 나타냅니다.
+
+- **transitions**: 은닉 상태 간의 transitions는 각 상태에서 다른 상태로의 이동을 나타냅니다. transitions는 특정 상태에서 다음 상태로 이동할 확률을 정의합니다.
+
+- **transition probabilities**: 각 transitions에 대한 확률 값으로, 모델이 한 상태에서 다음 상태로 이동할 확률을 결정합니다.
+
+- **outcomes/emissions**: 은닉 상태에 대한 관찰 가능한 결과 또는 방출을 나타냅니다. 이것들은 관측 데이터에 해당합니다.
+
+- **emission probabilities**: 각 은닉 상태에서 특정 결과가 발생할 확률을 나타냅니다.
+
+서열 길이 heterogeneity를 모델링하는 데 있어, 일부 서열이 다른 것보다 길거나 짧을 수 있으며 이를 모델링하기 위해 추가적인 transition을 많이 추가하지 않고도 처리할 수 있습니다. 예를 들어, 삭제된 서열의 경우, 서로 다른 길이의 삭제를 나타내는 여러 노드(상태)를 추가할 수 있습니다. 이렇게 하면 각 노드는 해당 길이의 삭제를 나타내며, 길이가 다른 다양한 삭제를 표현할 수 있습니다.
+
+마찬가지로, 삽입된 서열의 경우에도 서로 다른 길이의 삽입을 나타내는 노드를 추가할 수 있습니다. 더 긴 삽입은 삽입된 노드에 대한 자체 루프를 형성하여 표현될 수 있습니다. 이렇게 하면 서로 다른 길이의 삽입이 서로 다른 노드를 통해 나타낼 수 있습니다.
+
+- for Gene Structure
+
+  - 먼저 적절한 데이터를 사용하여 **HMM을 훈련**시켜야 합니다. 훈련 데이터는 유전자가 포함되어 있는지 여부를 알려주는 주석이 달린 DNA 서열일 수 있습니다. 이 훈련 단계에서 HMM은 유전자와 비유전자 영역 간의 특징을 학습하고 각 상태(은닉 상태)에서의 전이 확률과 방출 확률을 조정하여 모델을 최적화합니다.
+
+  - 훈련된 HMM을 사용하여 주어진 DNA 서열에 대해 유전자 특징이 어디에 있는지 예측할 수 있습니다. 모델은 각 위치에서 유전자와 비유전자 영역 간의 가장 적절한 경계를 결정하고 이를 통해 서열을 분류합니다. 또한 각 위치에서 예측에 대한 확률을 제공할 수 있습니다. 이 확률은 주어진 위치가 유전자인지 아닌지에 대한 신뢰도를 나타냅니다.
+
+- for Alignment
+
+  - 마찬가지로 Training이 선행되어야 합니다. 
+
+  - 훈련된 HMM을 사용하여 주어진 단백질 서열에 대해 정렬된 열과 관련된 아미노산이 어디에 있는지 예측할 수 있습니다. 모델은 서열의 각 위치에서의 아미노산이 어떤 정렬된 열과 관련되어 있는지 결정하고, 예측 결과에 대한 신뢰도를 제공합니다. 예측된 위치의 아미노산이 정렬된 열과 관련되어 있을 확률을 계산하여 제공합니다.
+
+#### Profile Hidden Markov Model
+
+프로파일 HMM은 다양한 서열에서 관찰되는 보존된 영역에 대한 통계적 정보를 포착합니다. 이러한 정보는 각 위치에서의 아미노산 또는 염기의 점수, 갭 패널티 등을 포함합니다.
+
+프로파일 HMM은 초기에 "Seed" 정렬이라고 하는 작은 정렬을 사용하여 훈련됩니다. 훈련 단계에서는 이러한 Seed 정렬을 기반으로 모델이 각 상태에서의 전이 확률 및 방출 확률을 추정하기 위해 Baum-Welch 알고리즘과 같은 알고리즘이 사용됩니다. 또한 훈련 데이터에 가중치를 부여하여 **특정 서열이 더 중요하게 고려**되도록 합니다.
+
+프로파일 HMM은 주어진 서열이 특정 단백질 패밀리에 속하는지 여부를 결정하기 위해 데이터베이스 검색에 사용될 수 있습니다. 각 서열에 대해 프로파일 HMM이 매칭되는 정도를 점수화하여 유사성을 측정합니다.
+
+주어진 시퀀스를 profile HMM에 align함으로써 중요한 정보를 디텍팅할 수 있습니다. 
+
+#### Emissions
+
+각 state의 확률에 따라 현 state를 emit할 수 있습니다. 일반적으로 다음과 같은 세가지 종류의 emission이 있습니다:
+
+![](./hmm.PNG)
+
+**M(Match)**
+
+- 이 상태는 정렬 열에서 관찰된 아미노산의 빈도에 따라 단일 아미노산을 방출합니다. 즉, 해당 열에서 가장 일반적으로 나타나는 아미노산이 발생됩니다.
+
+**I(Insertion)**
+
+- 이 상태는 하나 이상의 아미노산을 방출하며, 이들은 시퀀스의 background frequency에 따라 선택됩니다. 일반적으로 background frequency는 시퀀스 데이터 세트 전체의 아미노산 확률 분포를 나타냅니다.
+
+**D(Deletion)**
+
+- 이 상태는 아미노산을 방출하지 않고 대신 갭을 방출합니다. 따라서 이 상태는 정렬 열에서 빈 공간 또는 갭을 나타냅니다.
+
+매 M node마다 아미노산에 따른 확률, 그리고 다른 노드로 transition될 확률이 존재합니다.
+
+![](./hmm1.PNG)
+
+#### HMMer
+
+HMMer는 생물학적 서열 분석을 위한 프로파일 HMM의 구현 중 하나입니다. 이는 주로 단백질 및 DNA 서열을 분석하기 위해 사용됩니다. HMMer는 Janelia Research Campus에서 제공되며, 해당 도구에 대한 포괄적인 사용자 매뉴얼이 제공됩니다.
+
+HMMer는 Pfam 데이터베이스의 기초가 되었습니다. Pfam 데이터베이스는 1997년에 시작되었는데, 이는 단백질 데이터베이스의 크기가 계속 커지면서 새로 추가되는 단백질이 기존 단백질(도메인) 패밀리의 새로운 구성원임을 확인하는 데 사용되었습니다. Pfam은 단백질 서열을 분류하고 관리하기 위해 단백질(도메인) 패밀리로 구성된 데이터베이스입니다. 현재 Pfam 데이터베이스에는 약 20,000개의 패밀리가 있으며, 이는 InterPro와 통합되어 다양한 생물학적 서열 분석 및 비교 분석에 사용됩니다.
+
+HMMer의 구조는 다음과 같습니다:
+
+![](./hmmer.PNG)
+
+- M, D, I는 위에서 설명한 것과 동일합니다.
+- B, E: 각각 Begin, end를 나타내는 더미 state입니다.
+- N, C: 각각 N- C-터미널, 혹은 unaligned를 나타냅니다.
+- S, T: 각각 Start, Termination을 나타냅니다.
+- J: unaligned 시퀀스의 joining을 나타냅니다.
+
+위의 구조로 align할 수 있는 가능성은 다양합니다. 
+
+![](./hmmer1.PNG)
+
+#### Pros and Cons
+
+HMM을 이용하면 결과의 확률적 해석이 가능하며, 프로파일 HMM을 사용해서 추가 패밀리 멤버에 대해 높은 품질의 빠른 MSA이 가능합니다. 
+
+그러나, Profile HMM을 트레이닝 시키기 위해선 충분하고 좋은 훈련 데이터가 필요하며, Model dependencies를 캡처할 수 없으므로, dependency가 있는 RNA같은 데이터를 잘 모델링하지 못합니다.
+
+## Lecture 12: Phylogenies I
+
+MSA의 결과에서 Phylogenies로 넘어가는 것은 어려운 과정입니다. MSA 결과를 해석하기 위한 다양한 방법이 존재하며, 고려해야할 많은 것들이 있습니다. 
+
+Phylogenic 관점에서 MSA는 여러 방면으로 해석될 수 있습니다.
+
+- homologoues sequence에 대한 positional homology 가설
+- aligned된 residue들은 공통 조상의 시퀀스에서 유래한 공통된 anccestor residue를 공유합니다. 따라서 정렬된 residue들은 공통조상에서 유래한 것으로 간주할 수 있습니다.
+- column의 변화는 돌연변이에 해당합니다.
+- 돌연변이들은 진화의 시그널로 해석될 수 있습니다.
+
+Aligned regions들은 세 가지 경우로 나뉩니다:
+
+- **Positionally homologous**
+  - 실제로 정확하게 정렬 되었으며, MSA에서 서열 간에 위치적으로 homologue한 부분을 나타냅니다. 이 부분에는 phylogenetic signal이 포함되있으며, 진화적 관련성 및 거리를 파악하는데 중요한 역할을 합니다.
+- **Uninformative**
+  - 갭이 굉장히 많고, 제대로 정렬이 되지 않았으며, 딱히 phylogenetic 시그널을 찾아볼 수 없습니다.
+- **Incorrectly aligned**
+  - 함정입니다. 
+
+위의 uninformative 혹은 incorrectly aligned alignment들을 다루기 위해, column 혹은 sequence를 제거하거나 마스킹하는 작업이 필요합니다. 
+
+Remove는 진짜 그냥 열 자체를 지워버리는 것이고, 마스킹은 서열을 보존하되 분석에 포함하지 않는 것을 의미합니다.
+
+이 제거/마스킹의 기준은 다양할 수 있습니다. 일반적으로, uninformative 혹은 incorrectly aligned alignment를 제거/마스킹 합니다. 이는 alignment의 accuracy를 향상합니다. 
+
+그러나, 이 과정을 잘못 시행할 경우 오히려 진화적 신호를 부정확하게 제거할 수 있으며, 결과적으로 accuracy가 감소할 수 있습니다. 
+
+다양한 접근 방법이 존재하고, Gblocks, Guidance, TrimAI, HMMCleaner등이 사용될 수 있습니다. 
+
+### Phylogenetic Tree
+
+Tree형 다이어그램을 통해 엔티티간의 관계를 설명합니다. 이 Entities에는 Functional domains, gene sequences, genomic regions, genomes, organisms 등이 포함됩니다.
+
+![](./pt.PNG)
+
+1. tip, **leaf**, terminal node, vertex: 트리의 끝에 있는, 개별 개체 혹은 종을 나타냅니다. 이들은 더이상 branch를 가지지 않습니다.
+2. Branch, **Edge**: 엣지입니다.
+3. **Internal Node**: 진화적 관계의 분기점을 나타내며, 공통조상을 나타내기도 합니다.
+4. **Clade**: 트리의 한 부분으로, 공통조상과 해당 조상의 모든후손을 포함하는 그룹을 나타냅니다. 종종 공통의 형질이나 유전적 특징을 공유하는 생물군을 나타냅니다.
+
+같은 Tree이더라도 서로 다른 모양이나 방향을 가질 수 있습니다. 트리는 rooted일수도 있고, unrooted일 수도 있습니다.
+
+또한 엣지의 길이가 진화적 거리를 나타내는 경우도 있고, 아닌 경우도 있습니다. 
+
+- Cladogram은 가지의 길이를 고려하지 않으며, 각 분기점에서 동일하게 분기됩니다. 
+
+- Phylogram은 종간의 진화적 거리를 나타내며, 각 branch의 길이는 종간의 진화적 거리를 나타냅니다. 
+
+#### Rooting Tree
+
+MSA데이터로 일단 Phylogenetic Tree를 만들면, 초기에는 root가 설정되어있지 않습니다. Root를 설정하기 위한 한가지 방법은 outgroup을 사용하는 것입니다. outgroup은 ingroup종 각각보다 더 멀리 관련된 서열을 가지고 있는 종입니다. 이를 root로 설정하면 ingroup종들 간의 진화적 관계를 보다 명확히 파악할 수 있습니다.
+
+- Outgroup rooting
+  - 가장 멀리 떨어진, 혹은 가장 먼저 분기된 것으로 보이는 그룹을 선택합니다.
+  - prior/ independent information이 필요합니다.
+- Midpoint rooting
+  - 가장 멀리 떨어진 두 taxa의 분기점, 중간 지점을 루트로 선택합니다.
+  - molecular clock을 가정합니다.
+
+#### Resolved vs unresolved trees
+
+Tree의 형태는 resolved, unresolved가 있습니다. 
+
+resolved tree는 모든 분기점이 딱 두개의 가지로 나뉜 binary 형태의 tree입니다. 이러한 tree는 진화적 관계에 대한 확실한 정보를 제공합니다.
+
+unresolved tree는 binary divergence가 아닌 multifurcation이 존재합니다. 종 간의 관계가 불분명하거나 충분하지 않은 경우 사용될 수 있습니다. 
+
+불충분한 데이터 또는 상충하는 데이터로 인해 binary furcation을 결정할 수 없는 경우 **soft polytomy**라 하며, 빠른 진화로 인해 두개 이상의 분기로 나뉘는 경우 **hard polytomy**라 합니다.
+
+
+### Gene Tree
+
+우리가 phylogenetic tree로 할 수 있는것은, functional domains, gene sequence, genomic region을 entities로 설정하여 분석하는 것입니다. 이가 organisms의 phylogenetic tree로 이어지는 것은 매우 드뭅니다.
+
+우리는 Gene Tree를 다룹니다. 
+
+![](./genetree.PNG)
+
+Gene tree는 homologous sequence의 진화를 묘사합니다. 여기서 발생할 수 있는 이벤트는 speciation(종화), duplication, loss, horizontal transfer, hybridization, introgression 등등이 있습니다. 
+
+#### Homologuous genes
+
+여기서 중요한 개념이 등장합니다.
+
+![](./homogene.PNG)
+
+- **orthologs**: 종으로 분화된 후 갈라짐. last common ancestor가 speciation node인 경우
+- **paralogs**: Duplication 이후 갈라짐. last common ancestor가 duplication node인 경우
+
+Gene의 분화는 종에 무관할 수 있으며, 이것이 계통 분석을 복잡하게 만드는 원인입니다.
+
+#### Duplication // loss
+
+복제 및 손실은 유전자 진화에서 중요한 역할을 하는 현상입니다. 이를 통해 새로운 기능이 생성되거나 기존의 기능이 수정되며, 종 내의 다양성이 유지되고 증가됩니다. 
+
+게놈은 유전자가 동일한 염색체 내에서 여러본 복제되는 작은 규모의 duplication과, 여러개의 큰 유전자가 중복되는 duplication을 흔히 가집니다.
+
+또한 자주 일어나는 loss는 유전자가 기능을 상실하거나 유전자가 소실되는것을 의미합니다. 이는 pseudogenization을 유발하여 남은 유전자가 더이상 기능적이지 않게 됩니다. 
+
+수백 개의 유전자는 single copy로 존재할 수 있으며, 대부분의 Eurokaryotes들은 multi copy 유전자를 가집니다. 이들은 한 종 내에서 여러개의 복사본을 가집니다.
+
+#### Terms
+
+![](./gt.PNG)
+
+1. **Homology**:
+   - 공통의 조상으로부터 유래한 유전자들을 가리킵니다. 이들은 진화적으로 관련되어 있으며, common ancestor으로부터 유사성을 물려받았습니다.
+
+2. **Analogy**:
+   - 수렴적 진화로 인해 동일한 기능을 수행하는 비동기성 유전자들을 가리킵니다. 이들은 common ancestor으로부터 유래하지 않았지만, 독립적으로 비슷한 기능을 진화시켰습니다.
+
+3. **Orthology**:
+   - last common ancestor에서 분화한 유전자들을 가리킵니다. 이는 종간 분화에 의해 발생한 것입니다.
+
+4. **Paralogy**:
+   - 복제로 인해 발생한 last common ancestor에서 분화한 유전자들을 가리킵니다. 이들은 동일한 종 내에서 나타나며, 복제 이후 진화적으로 다양성을 띄게 됩니다.
+
+5. **Xenology**:
+   - 다른 생물체로부터 수평적 유전자 이전을 통해 발생한 유전자들을 가리킵니다.
+
+6. **In-/Out-paralogy**:
+   - 특정 종의 분화 이전 또는 이후에 발생한 파라로그 유전자들을 가리킵니다.
+
+7. **Co-orthology**:
+   - 내원성 유전자들이 다른 계통의 유전자들과 개별적으로는 이원성이 아니지만, 집단적으로는 이원성임을 나타냅니다.
+
+8. **Orthologous group**:
+   - 특정 분화 이후에 common ancestor으로부터 파생된 모든 유전자들의 모음입니다.
+
+#### In general
+
+- Gene tree는 유전자 및 그 기능의 진화적 관계를 나타냅니다.
+- 연구 범위와 질문에 따라 Gene tree는 오로지 orthologs만 필요한 경우도 있고, orthologs와 paralogs 모두를 포함해야 하는 경우도 있으며, 가능한 한 포괄적인 유전자 집합을 포함해야 합니다.
+
+species tree의 proxy로서의 Gene tree 활용
+- Gene tree는 종의 진화를 대표하는 대리자로 활용될 수 있으며, 이를 통해 생물의 진화에 대한 통찰력을 얻을 수 있습니다.
+- 이러한 응용 프로그램은 보통 엄격한 orthologs (예: rRNA 유전자) 또는 특정한 진화적 역사를 연구하는 데 사용되는 paralogs를 수용할 수 있는 방법에 따라 달라집니다.
+
+또한 여기서 phylogenetic inference는 statistical inference와 동일시될 수 있습니다.
+
+phylogenetic tree가 애초에 statistical procedure을 통해 도출되었기 때문입니다.
+
+### Substitution Model
+
+substitution model은 DNA나 단백질 서열의 진화적 변화를 설명하는 모델입니다. 아미노산 대체의 경우, PAM(Poisson Model), BLOSUM(Block Substitution Matrix), WAG 등과 같이 사전에 계산된 모델이 있습니다. 이러한 모델들은 특정한 변화 확률을 나타내며, 서열 간의 대체가 얼마나 자주 발생하는지를 설명합니다. 마찬가지로 DNA 대체 모델도 다양한 일반적인 모델이 존재하며, 이러한 모델은 변화 속도와 염기 조성 등을 주로 데이터에서 추정합니다.
+
+![](./substmodel.PNG)
+
+#### Rate variation
+
+Rate(변이율) variation은 한 트리 전체 또는 모든 사이트에 대해 단일한 rate matrix를 사용하는 것과 같이 모든 사이트에서 일정한 rate을 가정하는 것이 아니라, 사이트 간에 rate이 다를 수 있다는 개념을 나타냅니다. 즉, 일부 사이트는 더 빠르게 진화할 수 있고, 다른 사이트는 더 느리게 진화할 수 있습니다. 
+
+rate의 차이는 유전자 내에서 나타날 수 있으며, 예를 들어 보존된 도메인이나 모티프와 같은 영역, 서열의 위치(첫 번째 vs 세 번째 코돈 위치), 코딩과 비코딩 부위, 그리고 서로 다른 유전자 간에도 나타날 수 있습니다. 이러한 rate의 차이는 주로 **감마 분포**를 사용하여 모델링됩니다.
+
+![](./gamma.PNG)
+
+감마 분포는 다양한 site 간의 rate를 모델링하는 데 사용됩니다. 이 분포는 "알파" 모수에 의해 결정되며, 알파 값에 따라 변이율의 다양성이 조절됩니다. 알파 값이 1보다 작으면 사이트 간의 강한 다양성이 있으며, 알파 값이 높을수록 변이율의 다양성이 낮아집니다. 감마 분포는 많은 소프트웨어 패키지에서 구현되어 있어 다양한 분자 시계 및 진화 모델에서 사용됩니다.
+
+#### Choosing Model
+
+위에서 언급한 이유로 인해, 모델 선택은 매우 중요합니다. 이는 통계적 검정 방법을 통해 이루어질 수 있습니다. 
+
+가능성비율검정(Likelihood Ratio Test, LRT), AIC(Akaike Information Criterion), BIC(Bayesian Information Criterion)과 같은 통계적 검정을 사용하여 최적의 모델을 결정할 수 있습니다.
+
+또한 서로 다른 site간에 rate의 차이가 있는지 여부를 확인해야 합니다.
+
+서로 다른 정렬 영역이 서로 다른 진화 모델에 따라 발전하는지 여부또한 확인해야합니다.
+
+모델 선택에 사용되는 여러 소프트웨어가 있습니다. 
+
+### Inferring phylogeny
+
+일단 가능한 최선의 MSA 데이터에서 시작해야합니다. 
+
+- distance methods로는 Neighbor Joining이 있습니다. 
+- character based methods로는 Parsimony 등이 있습니다.....
+
+pairwise distance를 계산하는 방법은 아미노산과 염기서열에 따라 다릅니다.
+
+아미노산을 분석하는 경우, 적절한 subtitution matrix를 통해 두 서열간의 거리를 계산합니다.
+
+염기서열을 분석하는 경우, 사용가능한 모델 중 하나를 사용하여 두 서열 간의 거리를 계산합니다. 
+
+DNA substitution model은 일반적으로 multiple substitution에 대해 정확합니다. 
+
+이렇게 계산한 값을 가지고 tree를 구축할 수 있습니다. 보통 이렇게 만들어진 tree는 실제 진화적 거리를 나타냅니다.
+
+그러나, stochastic error 또는 inappropriate model은 부정확한 결과를 나타냅니다. 
+
+이론적으로는 디스탠스 스코어를 기반으로 트리를 만들고, 모든 트리를 평가한 후, 베스트 스코어를 가지는 트리를 픽하는게 최선이지만, 이렇게 할수는 없습니다. 너무 오래걸립니다.
+
+따라서 실제 환경에서는 싱글 트리를 구축한 뒤, Neighbor Joining 알고리즘을 이용하여 빠른속도로 tree를 구축합니다. 
+
+#### Neighbor Joining
+
+초기에 substitution model에 따른 pairwise distance matrix를 형성합니다. 
+
+이후 star형태의 phylogeny를 형성합니다. 
+
+거기다가 이제 점진적으로 노드를 추가합니다. 
+
+이 과정에서, 모든 페어의 평균 및 최소 거리를 계산하고, 가장 가까운 두 끝점을 새로운 노드로 병합합니다. 
+
+새로운 노드에서 모든 남은 끝점까지의 거리를 계산하고, 두 노드만 남을때까지 이 과정을 반복합니다.
+
+![](./nj1.PNG) ![](./nj2.PNG) ![](./nj3.PNG) ![](./nj4.PNG)
+
+
+## Lecture 13: Phylogenies II
+
+
+
