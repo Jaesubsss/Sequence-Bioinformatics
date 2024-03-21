@@ -153,6 +153,15 @@
     - [Inferring phylogeny](#inferring-phylogeny)
       - [Neighbor Joining](#neighbor-joining)
   - [Lecture 13: Phylogenies II](#lecture-13-phylogenies-ii)
+    - [Maximum parsimony](#maximum-parsimony)
+    - [Maximum likelihood](#maximum-likelihood)
+    - [Bayesian](#bayesian)
+    - [Bootstrap](#bootstrap)
+    - [Evaluation Data set](#evaluation-data-set)
+      - [Comparing trees](#comparing-trees)
+      - [Comparing tree topologies](#comparing-tree-topologies)
+    - [Discribig gene tree](#discribig-gene-tree)
+    - [workflow](#workflow)
 
 
 ## Lecture 1: Intro 
@@ -2955,5 +2964,230 @@ DNA substitution model은 일반적으로 multiple substitution에 대해 정확
 
 ## Lecture 13: Phylogenies II
 
+위 강의에서 Distans matrix based method인 Neighbor joining tree에 대해서 알아보았으니, 이번에는 character based methode에 대해 알아봅니다. distance matrix based method는 분기 시점이 깊어질수록 신뢰도가 떨어지지만 tree를 빠르게 만들 수 있는 방법입니다. 이 방법은 데이터에 대한 빠른 이해를 도와주지만, 정확도가 떨어지기 때문에 완전히 신뢰하긴 어렵습니다. 
+
+character based method는 MSA에서 '바로' tree를 생성합니다. 이렇게 만들어진 starting tree를 branch swapping, tree rearrangement를 통해 향상시킵니다. 이 과정을 통해 얻어진 best tree를 Optimality의 기준에 따라 유지합니다. 이 과정은 느리지만 정확합니다. Optimality의 기준엔 두가지가 존재합니다.
+
+- Maximum Likelihood (ML): 모델(tree topology)을 가정했을 때 데이터(query sequence)가 나올 확률인 likelihood를 최대화할 수 있는 모델을 구합니다. 모든 가능한 trees를 다 고려하기 때문에 느린 속도를 가집니다.
+
+- Maximum Parsimony (MP): 가장 적은 change를 가지는 tree를 Optimal로 판단합니다. 즉, change의 횟수를 최소화 합니다. 
+
+- Bayesian: 여러 best tree를 가져갑니다. 
+
+### Maximum parsimony
+
+1. ML과 마찬가지로, 모든 가능한 trees를 고려하여 분석을 시작합니다. 
+2. alignment의 각 칼럼에 대해, 각 tree topologies에 대해 요구되는 change의 수를 결정합니다. 
+3. 모든 칼럼에 대한 change의 수를 모두 더하여 각 tree가 데이터를 설명하는데 필요한 총 changes의 수를 계산합니다.
+4. 가장 changes의 수가 적은 나무를 선택합니다. 
+
+![](./parsimony.PNG)
+
+물론 장단점이 존재합니다.
+
+Advantages
+
+- tree의 각 branche에 따라 characters에 대한 정확한 맵핑을 제공합니다.
+- non-molecular character에도 사용이 가능합니다.
+
+Disadvantages
+
+- substitution에 대해 현실적이지 못한 모델을 사용하고, multiple substitution에 대한 보정을 수행하지 않습니다.
+- 분석이 비확률적인 방법으로 진행되며, 따라서 결과를 통계적으로 평가하는 것이 어려울 수 있습니다.
+- branch의 길이를 무시하며, 진화적 거리에 대한 정보를 제공하지 않습니다. 
+- 이 밖에도 서열 진화에 있어 많은 중요한 요소들을 제대로 반영하지 못합니다.
+
+### Maximum likelihood
+
+통계적인 접근방법입니다. Maximum likelihood는 주어진 서열의 초기 집합에서 가능한 모든 트리 topology를 검토하는 방법으로, 서열들을 가장 진화적으로 잘 설명할 수 있는 생물계통체제를 통계적으로 찾아내는 것입니다. 즉, 가능한 진화적 변화에 대한 확률을 모두 계산하여 가능성을 최대화함으로써 최적의 선택을 찾습니다.
+
+Maximum likelihood에 의한 방법은 다중 서열 정렬에서 사용한 치환 행렬처럼 아미노산이나 핵산의 치환율에 대한 정보를 이용합니다.
+
+Maximum likelihood 접근방식은 Markov chain Monte Carlo나 Bayesian inference 등 현대적인 통계적 방법들을 포함한 여러 가지 통계적 가설 및 검정이 가능하다는 점에서 매우 강력한 방법이지만 그 동안 컴퓨터의 능력의 한계로 계산에 오랜 시간이 걸렸다는 점이 약점으로 지적되어 왔습니다.
+
+컴퓨터적인 계산이 많이 필요하다는 단점이 있지만, 현재 phylogenetic tree를 생성하는데 이상적인 방법입니다. 
+
+ML은 통계적인 프레임워크를 기반으로 하며, 다음의 phylogenetic hypothesis를 테스트하는데 사용될 수 있습니다:
+
+- tree topology
+- divergence times(분기 시점)
+- models of evolution
+- rate heterogeneity
+- 등등
+
+Likelihood는 주어진 모델 M에서 데이터 D의 확률을 나타내며, 다음과 같이 표현됩니다.
+
+$$\mathbf{P(D|M)}$$
+
+예를 들어, 동전 던지기를 생각해보겠습니다. 이 동전이 공평한 동전인지, 두 개의 앞면이 있는 동전인지, 아니면 두 개의 뒷면이 있는 동전인지를 가정할 수 있습니다. 각 모델은 데이터를 설명하는 방식이 다르므로, 각 모델에 대한 데이터의 확률도 다를 것입니다.
+
+* 모델 1(공평한 동전): 앞면과 뒷면이 나올 확률이 각각 0.5로 동등합니다.
+* 모델 2(두 개의 앞면): 앞면이 나올 확률은 1이고, 뒷면이 나올 확률은 0입니다.
+* 모델 3(두 개의 뒷면): 앞면이 나올 확률은 0이고, 뒷면이 나올 확률은 1입니다.
+
+어떤 모델을 선택하는지는 데이터의 확률에 영향을 미치게 됩니다. 
+
+우리가 사용하는 상황에서, 모델은 어떻게 data가 generated되었는지를 의미하고, 데이터는 주어진 alignment입니다. 
+
+예를 들어, base A,T,C,G가 서로를 향해 변이될 확률은 각각 다릅니다. 이는 현재 존재하는 base의 frequencies를 통해 계산될 수 있습니다. 
+
+![](./like.PNG)
+
+그렇다면 실제 분석 과정은 어떻게 되는지 알아봅시다.
+
+1. 먼저 tree의 topology와 branch length를 생성(설정)합니다.
+2. 주어진 데이터셋의 각 칼럼(site)에 대해 likelihood를 계산하고, 모든 site의 likelihood를 계산하기 위해 이를 곱합니다.
+3. branch length를 modify하고, topology의 likelihood를 optimize합니다. 
+4. 휴리스틱을 이용해 다음 topology를 선택하고, branch length를 modify합니다. 이 과정은 반복될 수 있습니다.
+5. 가장 높은 likelihood를 가지는 topolgy와 branch length를 최종적으로 선택합니다. 
+
+따라서, Maximum likelihood tree에서는 주어진 데이터가 특정한 tree와 branch length에서 발생할 수 있는 확률인 P(DATA|TREE)를 최대화 하는것이 목표입니다. 최종 얻어진 결과는 주어진 데이터를 생성할 가능성이 가장 높은 tree와 branch length입니다. 
+
+ML는 항상 best tree 하나만을 선택하고 나머지는 고려하지 않습니다. 
+
+그러나, 다른 tree들이 optimal tree와 비슷하지만 조금 낮은 likelihood를 가질 수 있습니다. 이러한 경우 우리는 optimal tree와 유사한 alternative tree를 고려할 필요가 있습니다. 
+
+이는 Bayesian inference에서 보존될 수 있습니다.
+
+### Bayesian
+
+Bayesian Inference는 주어진 증거에 따라 무작위 사건에 대한 belief를 업데이트하는 것을 의미합니다.
+
+예를 들어, 주어진 데이터가 alignment이고, 이 시퀀스의 진화와 관련해서 best guess를 사용한다고 할 때, 베이시안 룰을 이용하여 우리가 가지고 있던 prior probability를 업데이트하고, 모델과 파라미터의 posterior probability를 얻을 수 있습니다. 
+
+Posterior Probability는 다음과 같이 나타납니다.
+
+$$P(\theta|Data)$$
+
+![](./bayes.PNG)
+
+엄..
+
+암튼 posterior probability를 정확하게 계산하는 것은 계산적으로 매우 비용이 많이 드는 작업입니다. 따라서 우리는 일반적으로 posterior probability distribution에서 tree를 샘플링 하여 approximate합니다. 이렇게 되면 분포에서 높은 확률을 가진 tree를 자주 방문합니다. 
+
+MCMC는 이러한 샘플링을 수행하는데 사용되는 기술입니다. MCMC는 tree의 posterior probability에 비례하여 trees의 sequence를 샘플링합니다. 
+
+예를 들어봅시다. 10,000,000번의 반복을 수행하고, 매 1000번째 반복에서 방문한 tree를 저장한다고 합시다. 이렇게 되면 총 1만개의 tree를 얻을 수 있습니다. 
+
+결과는 이런 샘플된 tree들의 합의 형태로 사용될 수 있습니다. 그러나 이 작업은 몇주, 혹은 몇달정도의 시간이 소요됩니다.
+
+물론 장단점이 존재합니다.
+
+Advantages
+
+- 확률적 프레임워크로써, 확률적 추론 또한 가능합니다. 따라서 자연스러운 해석이 가능합니다.
+- divergence time을 추정하는데 좋습니다.
+- 분석 과정에서 각 branch의 support 값을 함께 계산하므로 결과 해석이 용이합니다. 이는 tree의 특정 branch가 데이터에 얼마나 잘 부합하는지 측정하는데 도움이 됩니다.
+
+Disadvantages
+
+- prior probability를 지정해줘야하는데, 이게 좀 어려울 수 있습니다.
+- 모델 및 매개 변수의 선택이 매우 중요합니다. 이 과정이 잘못되면 결과가 왜곡될 수 있습니다.
+- non-convergence 문제가 발생할 수 있습니다. 
+
+얻어진 tree에는 bayesian confidence level이 표기됩니다. 이는 샘플 트리중에서 특정 그룹이 관찰된 비율입니다. posterior probability distribution에서 특정 그룹이 나타난 빈도를 계산하여 해당 그룹에 대한 신뢰도를 추정합니다. 
+
+이런 방식으로 계산된 신뢰도 값은 트리의 구조에 대한 신뢰도를 측정하는데 사용될 수 있습니다.
+
+계통발생학적 분석을 진행하고 tree를 만든다면, ML과 베이지안 방법을 모두 수행하는 것이 좋습니다. 
+
+### Bootstrap
+
+confidence를 평가하는데 사용되는 한가지 방법은 Bootstrap값입니다. **부트스트래핑은 단일 노드에 대한 신뢰도를 측정**하는 데 사용됩니다. 이는 tree를 생성하는 resampling 기법으로, replacement를 이용해 alignment를 리샘플링합니다. 전체 tree에 대한 정확도를 측정하는 것이 아니라 tree의 개별 노드에 대한 반복성을 나타냅니다.
+
+오리지널 데이터는 Multiple alignment의 컬럼입니다. 같은 길이의, x개의 새 alignment를 샘플합니다. 이는 pseudosample 혹은 bootstrap dataset이라 불립니다. 
+
+데이터를 **반복적으로 샘플링** 하고, 각 리샘플링된 데이터 세트에 대해 하나의 tree를 생성합니다. 
+
+이를 반복하여 여러번 tree를 구성합니다. **각 tree에서 어떤 그룹이 나타나는지를 계산**하고, 이를 기록합니다. 이후 각각의 트리에서 분석된 **branch의 빈도가 계산**됩니다. 
+
+즉, 부트스트랩 값은 각 branch가 나타나는 빈도를 나타내며, 일반적으로 백분율로 표시됩니다. 
+값이 높을수록 해당 특성이 분석 결과에서 더 강력하고 신뢰할 수 있음을 나타냅니다. 일반적으로 70% 이상의 부트스트랩 값은 신뢰도가 높다고 간주됩니다.
+
+그러나 부트스트랩 값은 데이터 세트가 크거나 불안정한 세포가 있는 경우에는 문제가 될 수 있습니다. 문자 및 분석할 세포 수가 증가하거나, 불안정한 세포가 있는 경우 부트스트랩 값이 감소할 수 있습니다.
+
+부트스트랩 값은 Neighbor Joining(NJ), Maximum Parsimony(MP), Maximum Likelihood(ML)과 같은 다양한 트리 구축 방법에 모두 적용될 수 있습니다.
+
+### Evaluation Data set
+
+모든 방법은 최소한 하나의 트리를 찾을 것입니다. 심지어 무작위 데이터에서도 어떤 '최적' 트리가 있을 것입니다. 
+
+이것은 주어진 데이터에서 트리를 발견하는 것은 항상 가능하다는 것을 의미합니다. **하지만 이것이 실제로 진화적 관계를 잘 반영하는 것인지에 대해서는 따로 판단해야 합니다.**
+
+따라서 우리는 데이터에는 진화적 관련성이 있는지 여부를 확인해야 합니다.
+
+그러나 데이터에 진화적 신호가 없을 수 있습니다. 이것은 진화 속도가 느린 경우에 나타날 수 있습니다. 또한 데이터에는 non-phylogenetic 시그널이 존재할 수 있습니다. 예를 들어, 진화 속도, 염기 구성 등이 서로 다른 종 간에 다양하게 변할 수 있습니다.
+
+잘못된 트리가 있더라도 높은 신뢰도를 가질 수 있습니다. 실제로 데이터에 non-phylogenetic 시그널이 있는 경우, 잘못된 트리에도 높은 신뢰도가 부여될 수 있습니다. 예를 들어, 돌연변이 포화(mutational saturation)는 데이터에 매우 중요한 영향을 미칠 수 있습니다. 서열 간의 유사성이 염기 빈도의 유사성과 동일할 때 돌연변이 포화가 발생합니다. 이 경우, 진화적 신호가 손실되고 정확한 진화 관계를 추론하는 데 어려움을 겪을 수 있습니다.
 
 
+#### Comparing trees
+
+트리를 비교하는데는 다양한 방법이 있습니다. 일반적으로는 여러 방법이나 분석 결과를 비교하여 일관된 결과를 얻는 것이 중요합니다.
+
+- same alignment, different methods
+- same alignment, posterior trees of Bayesian analyses 
+- same genomes/samples, different loci 
+
+보통 결과를 요약하는데에는 consensus methods가 사용됩니다. 이는 다양한 분석결과를 통합하여 각 분석 결과의 공통적인 부분을 요약하는 방법입니다. 
+
+비교에는 visual method와 quantitative method가 사용될 수 있습니다.
+
+#### Comparing tree topologies
+
+이는 트리의 구조를 비교하는 방법입니다.
+
+- Robinson Foulds distance
+  - 두 개의 트리 사이의 차이를 측정하는데 사용되는 지표중 하나입니다. 이 거리는 두 트리가 가지고 있는 분할(partition)의 차이를 계산하여 나타냅니다. 여기서 분할이란 트리의 branch를 자르는 모든 가능한 방법을 의미합니다.
+  - 로빈슨-파울즈 distance는 두 트리 사이의 차이를 정량화하여 나타내므로 두 트리가 얼마나 다른지를 알 수 있습니다. distance가 클수록 두 트리의 차이가 크고, distance가 작을수록 두 트리의 유사성이 높습니다. 
+  
+  ![](./robinson.PNG)
+
+- Quartet distance
+  - 이 distance는 두 트리 사이의 각각의 Quartet(4개의 리프로 구성된 트리)가 서로 다른지를 계산하여 나타냅니다. 여기서 Quartet란 어떤 4개의 리프를 선택하여 만든 서브트리를 의미합니다.
+  - Quartet distance는 두 트리 간의 차이를 정량화하여 나타내므로, 두 트리가 얼마나 다른지를 알 수 있습니다. 두 트리 사이의 Quartet distance가 클수록 두 트리의 차이가 크고, distance가 작을수록 두 트리의 유사성이 높습니다. 
+
+  ![](./quart.PNG)
+
+
+트리 구조를 비교하는 데는 RF(Robinson-Foulds) 거리가 일반적으로 가장 널리 사용되지만 일부 문제가 있을 수 있습니다. RF 거리의 통계적 해석은 명확하지 않을 수 있고, 또한 낮은 해상도와 작은 변화에도 큰 거리가 발생할 수 있는 문제가 있습니다.
+
+### Discribig gene tree
+
+Gene tree를 설명할 때 필요한 용어들은 다음과 같습니다.
+
+* Ancestor: 현재의 생물들의 공통 조상으로 거슬러 올라가는 생물의 세대.
+
+* Ancestral Lineage: 현재의 생물군에 대한 공통 조상의 진화적인 선조들로 이루어진 계통.
+
+* Basal Group: 나무에서 가장 근본적인 위치에 있는 군.
+
+* Clad: 공통 조상과 그 후손들로 이루어진 진화적인 단위.
+
+* Diversification: 다양한 형태나 종이 발생하는 과정.
+
+* Homolog: 공통 조상으로부터 유래된 유사한 특성이나 유전자.
+
+* Ingroup: 연구 대상이 되는 특정 군 또는 종을 의미합니다.
+
+* Sister Group: 공통 조상을 가진 두 개의 군 중 하나.
+
+* Node: 나무에서 두 가지 이상의 가지가 만나는 지점.
+
+* Species Tree: 다양한 종 간의 진화적 관계를 나타내는 나무.
+
+* Gene Tree: 특정 유전자 또는 유전자 세트의 진화적 관계를 보여주는 나무.
+
+* Paralog: 동일한 종 내에서 유전체 중복으로 인해 생긴 유사한 서열.
+
+* Root: 나무에서 가장 근본적인 위치에 있는 지점.
+
+* Duplication Event: 유전체 중복으로 인해 유전자가 두 개로 복제되는 사건.
+
+* Speciation Event: 새로운 종이 형성되는 과정.
+
+![](./disc.PNG)
+
+### workflow
+
+![](./way.PNG)
