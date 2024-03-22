@@ -162,6 +162,14 @@
       - [Comparing tree topologies](#comparing-tree-topologies)
     - [Discribig gene tree](#discribig-gene-tree)
     - [workflow](#workflow)
+  - [Lecture 14: Large scale analysis](#lecture-14-large-scale-analysis)
+    - [Large-scale assignment of orthologs/homologs](#large-scale-assignment-of-orthologshomologs)
+    - [Population genomic](#population-genomic)
+    - [Phylogenetic incongruence](#phylogenetic-incongruence)
+      - [Incomplete lineage sorting \& coalescence](#incomplete-lineage-sorting--coalescence)
+    - [Gene flow \& Introgression](#gene-flow--introgression)
+    - [D-statistic](#d-statistic)
+  - [Summary](#summary)
 
 
 ## Lecture 1: Intro 
@@ -2878,7 +2886,7 @@ Gene의 분화는 종에 무관할 수 있으며, 이것이 계통 분석을 복
    - 특정 종의 분화 이전 또는 이후에 발생한 파라로그 유전자들을 가리킵니다.
 
 7. **Co-orthology**:
-   - 내원성 유전자들이 다른 계통의 유전자들과 개별적으로는 이원성이 아니지만, 집단적으로는 이원성임을 나타냅니다.
+   - 내원성 유전자들이 다른 계통의 유전자들과 개별적으로는 orthology이 아니지만, 집단적으로는 orthology임을 나타냅니다.
 
 8. **Orthologous group**:
    - 특정 분화 이후에 common ancestor으로부터 파생된 모든 유전자들의 모음입니다.
@@ -3191,3 +3199,148 @@ Gene tree를 설명할 때 필요한 용어들은 다음과 같습니다.
 ### workflow
 
 ![](./way.PNG)
+
+## Lecture 14: Large scale analysis
+
+지금까지는 한개의 gene familiy 혹은 phylogeny에 해당하는 small-scale analysis만 봐왔습니다. 이젠 좀더 큰 genome-scale의 진화적 분석에 대해 알아봅시다.
+
+게놈 스케일의 분석은 일반적으로 코딩 영역에 기반하며, 모든 게노믹 영역을 조사합니다.  종 당 하나의 개체를 분석하며, 보통 re-sequencing data를 이용하여 이루어집니다.
+
+homology/orthology 할당이 필요하며, 보통은 같은 종이나 근연한 관계의 종을 분석합니다. 
+
+다음과 같은 일반적인 접근방식이 있습니다:
+
+- tree based
+- graph based
+  - RBH
+  - clustering
+- hybrid
+
+### Large-scale assignment of orthologs/homologs
+
+Large-scale assignment of orthologs/homologs에 대한 최선의 전략은 여러 접근 방식을 결합하는 것입니다. OMA 알고리즘 및 데이터베이스는 이러한 전략을 구현하는 데 사용될 수 있습니다.
+
+OMA 알고리즘 및 데이터베이스는 다음과 같은 특징을 가지고 있습니다:
+
+- multiple 파이프라인: OMA 알고리즘은 multiple 파이프라인을 사용하여 유전자의 orthologs 및 homologs을 평가합니다.
+- pre-computed: OMA 데이터베이스는 미리 계산된 결과를 제공하며 다른 데이터베이스와 상호 연결될 수 있습니다.
+  - 1:1 orthologs: OMA는 1:1 orthologs을 식별하고 제공합니다.
+  - homologs: OMA는 homologs(orthologs 및 paralogs)을 평가하고 제공합니다.
+  - standalone software: OMA는 독립적인 소프트웨어로 제공되며 이와 함께 분석 및 시각화 도구를 제공합니다.
+
+orthologs/homologs 할당에는 여러가지 어려운 점이 존재합니다. 
+
+- pairwise orthology definition (non-transitive): orthology은 종에 따라 다르기 때문에 pairwise orthology 정의는 non-transitive합니다. 즉, A가 B와 orthology이 있고 B가 C와 orthology이 있더라도 A와 C가 orthology이 있는 것은 아닐 수 있습니다.
+
+- differential gene loss (또는 불완전한 샘플링): 다양한 종 간에 유전자 손실이나 유전자 샘플링이 서로 다를 수 있습니다.
+
+- multi-domain proteins / mosaics: 여러 도메인을 가지고 있는 단백질이 있는 경우, 단백질의 각 부분이 다른 종에서 발생한 것일 수 있습니다.
+
+- horizontal transfer (xenologs): 외래 유전자 전송은 종 간에 유전자 전달이 발생할 때 orthology 할당을 어렵게 만들 수 있습니다.
+
+- high rates of sequence divergence: 고도로 분화된 종에서는 서열이 빠르게 변화할 수 있으며, 이로 인해 orthology 할당이 더 어려워집니다.
+
+- poor genome assembly / annotation: 부정확한 게놈 어셈블리 또는 annotation은 orthology 할당에 대한 신뢰성을 낮출 수 있습니다.
+
+- computational demand: 대규모 데이터셋에서 orthology을 할당하려면 많은 계산 리소스가 필요할 수 있습니다.
+
+### Population genomic
+
+동일한 (또는 밀접한 관련성을 가진) 종으로부터 여러 게놈 데이터가 있으며, 각 개체당 수천에서 수백만 개의 단일 염기 다형성(SNP)이 있습니다.
+
+linkage disequilibrium, genetic drift, coalescent, 다변량 통계 등과 같은 통계학적 개념 및 방법을 사용하여 분석합니다. 
+
+### Phylogenetic incongruence
+
+게놈을 이용한 트리를 만드는 경우, 여러 요인으로 인해 유전자 유래 트리와 게놈 유래 트리가 서로 일치하지 않을 수 있습니다. 이를 Phylogenetic incongruence라고 하며, 여러 이유가 존재할 수 있습니다.
+
+기술적 요인:
+
+- insufficient taxon sampling
+-  orthology mis-assignment
+-  misalignment
+-  excessive trimming
+-  inappropriate model
+
+생물학적 요인:
+
+- incomplete lineage sorting / deep coalescence
+- hybridization or introgression
+- horizontal gene transfer
+- differential duplication and loss
+- natural selection
+  ![](./incon.PNG)
+
+  서로 다른 유전자나 유전체 영역은 다양한 진화적 압력이나 진화 속도를 경험할 수 있으며, 이로 인해 유전체 전체에 걸쳐 불일치한 진화학적 신호가 발생할 수 있습니다.
+
+#### Incomplete lineage sorting & coalescence
+
+이는 종이 분리되는 과정에서 발생하는 진화적 현상으로, lineage sorting이 종 간에 무작위로 분할될 수 있음을 나타냅니다. 이는 종의 형성 과정에서 발생하는 현상으로, 종이 분리될 때 lineage sorting이 어떤 종에 먼저 나타날지 예측할 수 없습니다.
+
+알렐 polymorphisms이 종의 분화 이벤트를 횡단하여 존재합니다. lineage sorting은 종의 분화 이벤트가 발생할 때까지 유지되며, 종이 형성될 때 발생하는 다양한 변이 형태를 나타냅니다.
+
+알렐은 더 멀리 있는 종의 알렐과 먼저 결합됩니다. lineage sorting의 경우, 종 간에 존재하는 알렐은 종의 관련성에 관계없이 더 멀리 떨어진 종의 알렐과 먼저 결합될 수 있습니다.
+
+이로 인해 유전자 트리가 종 트리와 다를 수 있습니다. 불완전한 계통 분류는 종의 형성 및 분화 과정에서 유전자의 coalescence과 lineage sorting을 나타내므로, 유전자 트리가 종 트리와 일치하지 않을 수 있습니다.
+
+
+![](./ciak.PNG)
+
+유전자의 공통 조상으로의 coalescence는 lineage sorting의 일부로서 발생하는 현상입니다. 이것은 A, B, C와 같은 다양한 종이 공통 조상을 공유하는 상황에서 나타날 수 있습니다. lineage sorting의 경우, 여러 종이 공통 조상의 선조적 다양성을 공유하기 때문에 coalescence가 발생할 수 있습니다.
+
+coalescence가 발생하면 유전자의 진화적 관계를 나타내는 트리에서 서로 다른 토폴로지가 발생할 수 있습니다. 즉, 두 가지 이상의 다른 트리 형태가 발생할 수 있습니다. 이것은 종 간의 관계가 불분명할 수 있다는 것을 의미합니다. 따라서 A, B, C와 같은 다양한 종에서 발생한 공통 조상의 coalescence는 불일치하는 토폴로지가 발생할 가능성이 있습니다.
+
+그러나 이러한 coalescence 특성은 종 간에 gene flow가 발생하지 않는 한 비슷한 빈도로 나타나는 현상입니다. gene flow가 발생하면 서로 다른 종 간에 유전자가 이동하고 혼합될 수 있으므로 종 간의 진화적 관계를 나타내는 트리 토폴로지가 다르게 나타날 수 있습니다. 종 간의 gene flow가 있으면 종 내부의 유전자 혼합이 더 빈번하게 발생할 수 있으므로 종 간의 유전자 트리 토폴로지가 더 불일치할 수 있습니다.
+
+### Gene flow & Introgression
+
+**Gene Flow**는 진화적으로 근연한 종 끼리 발생하는 현상입니다. 한 종의 개체가 다른 근연한 종 집단에 섞이는 경우, 어떤 한 종의 유전자가 다른 종의 유전자로 이동할 수 있으며, 이는 세대를 거치며 희미해지지만 끝까지 남아있기도 합니다. 
+
+![](./flow.PNG)
+
+Introgression은 Gene flow의 한 형태로 두 종 또는 모집단 사이에서 유전자가 서로 섞이는 과정을 나타냅니다. 이는 일반적으로 희귀한 하이브리드가 부모 종 또는 모집단과 교배하여 생성된 후 다시 부모 종 또는 모집단과 교배하는 과정으로 발생합니다. 이 과정에서 부모 종은 독립적으로 유지되지만, 유용한 특성을 전달하는 유전자가 전환되고 전파될 수 있습니다.
+
+Gene Flow은 종 트리와 다른 유전자 트리를 생성할 수 있습니다. 이러한 불일치를 식별함으로써 Gene Flow의 존재를 추정할 수 있습니다.
+
+gene flow가 발생하면 하이브리드하는 모집단 간에 shared alleles이 증가할 수 있습니다. ABBA-BABA 테스트 또는 D-통계를 사용하여 하이브리드하는 모집단 간에 shared alleles의 과잉을 식별할 수 있습니다.
+
+gene flow된 영역이나 gene flow의 방향 또는 양을 식별하기 위해 다양한 통계 테스트를 사용할 수 있습니다. 이러한 테스트는 gene flow이 발생한 지점을 파악하고 특정 유전자 영역의 유입을 추정하는 데 도움이 됩니다.
+
+### D-statistic
+
+![](./dsta.PNG)
+
+D-statistic은 ABBA-BABA 테스트에서 사용되는 측정 지표입니다. ABBA-BABA 테스트는 gene Flow을 식별하기 위해 사용되며, 특히 gene Flow과 완전한 세대 분류의 차이를 나타내는 경우에 관심이 있습니다.
+
+D-statistic을 계산하기 위해 다음 단계를 수행합니다:
+
+Alleles A 및 B: 분석하려는 두 유전자 종을 나타냅니다.
+outgroup: 유입이 없다고 가정하는 유전자 종 또는 모집단을 나타냅니다. 보통은 Allele A가 이 역할을 합니다.
+candidate introgressor P3: 유입이 발생한 것으로 의심되는 유전자 종 또는 모집단을 나타냅니다. 보통은 Allele B가 이 역할을 합니다.
+P1 및 P2: outgroup과 candidate introgressor P3 사이의 다른 모집단을 나타냅니다.
+D-statistic은 다음과 같이 계산됩니다:
+
+D = (ABBA - BABA) / (ABBA + BABA)
+
+여기서 ABBA 및 BABA는 네 가지 순열 유형의 발생 빈도를 나타냅니다. ABBA는 candidate introgressor P3에서 나온 유전자가 먼저 외부군으로부터 나온 것과 같은 순열입니다. BABA는 candidate introgressor P3가 아닌 다른 모집단에서 나온 유전자가 외부군으로부터 나온 것과 같은 순열입니다.
+
+D-statistic은 gene Flow이 없는 경우에는 0입니다.
+
+gene Flow이 발생한 경우에는 0이 아닌 값을 나타낼 것으로 예상됩니다. 따라서 D-statistic이 0에서 벗어날수록 gene Flow의 가능성이 더 높아집니다.
+
+
+## Summary
+
+- haplotype: haploid(홑배수체)와 genotype(유전자형)의 합성어로, 어떤 생명체에서 한 부모로부터 함께 유전되는 대립유전자의 집합, 즉 생식자의 유전자형을 의미한다.
+
+
+- OLC vs De brujin
+  - 둘다 read들을 합쳐 contig를 형성하는데 사용되는 알고리즘이다. 
+  - Overlapping layout consensus:
+    - Read들이 겹치는 구간을 찾아 나열하고, 가장 가능성이 높은 서열을 선택
+    - Sanger 시퀀싱할때 주로 사용
+    - repeat를 더 잘 해결, 그러나 pairwise overlap을 계산하기 때문에 많은 시간 및 계산 필요
+  - De Brujin graph
+    - Read들을 k-mer로 자른 뒤 겹쳐진 k-mer를 연결
+    - 여러갈래로 나뉘는 경우 해당 k-mer가 몇번 나왔는지 카운팅
+    - coverage가 낮은 경로는 제외하여 contig 형성
